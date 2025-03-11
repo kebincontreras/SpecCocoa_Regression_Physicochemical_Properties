@@ -59,7 +59,7 @@ def main(regressor_name, hyperparams_list):
     best_params = None
 
     for i, params in enumerate(hyperparams_list):
-        wandb.init(project="1spectral_regression_Machine_Learning", name=f"{regressor_name}_{dataset_name}_config_{i}", config=params)
+        wandb.init(project="2spectral_regression_Machine_Learning", name=f"{regressor_name}_{dataset_name}_config_{i}", config=params)
         
         print(f"\n🔹 Entrenando {regressor_name} con {params}")
         regressor = build_regressor(regressor_name, params)
