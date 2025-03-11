@@ -56,17 +56,21 @@ def classify(model, train_dataset, test_dataset, save_name=None):
 
     return {"mse": mse, "r2": r2}
 
-def build_regressor(name):
+def build_regressor(name, params=None):
+    if params is None:
+        params = {}
+
     if name == "svr":
-        return MultiOutputRegressor(SVR())  # 🔹 Envolver SVR en MultiOutputRegressor
+        return MultiOutputRegressor(SVR(**params))  
     elif name == "rfr":
-        return RandomForestRegressor()  # Random Forest ya admite múltiples salidas
+        return RandomForestRegressor(**params)  
     elif name == "mlp":
-        return MLPRegressor()  # MLP también admite múltiples salidas
+        return MLPRegressor(**params)  
     elif name == "knnr":
-        return KNeighborsRegressor()  # KNN admite múltiples salidas
+        return KNeighborsRegressor(**params)  
     else:
         raise ValueError(f"Regressor {name} not supported")
+
 
 
 def regress(model, train_dataset, test_dataset, save_name=None):
