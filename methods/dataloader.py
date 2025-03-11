@@ -96,8 +96,11 @@ def prepare_data1(dataset_name, split, seed, dl=False, dataset_params=None):
         label = data['label'].squeeze()
 
     elif dataset_name == 'cocoa_regression':  # Cargar datos desde archivos .h5 separados
-        train_file = 'data/train_cocoa_dataset_normalized.h5'
-        test_file = 'data/test_cocoa_dataset_normalized.h5'
+        #train_file = 'data/train_cocoa_dataset_normalized.h5'
+        #test_file = 'data/test_cocoa_dataset_normalized.h5'
+
+        train_file = 'data/train_nir_cocoa_dataset_normalized.h5'
+        test_file = 'data/test_nir_cocoa_dataset_normalized.h5'
 
         # Cargar dataset de entrenamiento
         with h5py.File(train_file, 'r') as f:

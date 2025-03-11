@@ -95,7 +95,7 @@ def main(classifier_name, batch_size, epochs, lr, weight_decay):
 
     # Iniciar W&B
     wandb.init(
-        project="1cocoa_regression_Deep_Learning",
+        project="2cocoa_regression_Deep_Learning",
         entity="kebincontreras", 
         name=f"{classifier_name}_experiment",
         config=vars(args)  # 🔹 Guarda toda la configuración en W&B
