@@ -11,6 +11,7 @@ from methods.models.config import (
 import os
 os.environ["WANDB_SILENT"] = "true"  
 
+
 def init_parser():
     parser = argparse.ArgumentParser(description="Deep Learning Spectral Regression")
     parser.add_argument("--save-name", default="exp", type=str, help="Path to save specific experiment")
@@ -94,7 +95,7 @@ def main(classifier_name, batch_size, epochs, lr, weight_decay):
 
     # Iniciar W&B
     wandb.init(
-        project="cocoa_regression_Deep_Learning_15",
+        project="1cocoa_regression_Deep_Learning",
         entity="kebincontreras", 
         name=f"{classifier_name}_experiment",
         config=vars(args)  # 🔹 Guarda toda la configuración en W&B
@@ -127,13 +128,24 @@ def main(classifier_name, batch_size, epochs, lr, weight_decay):
 
     return dict_metrics
 
+
 if __name__ == "__main__":
     Regression_1 = [
-        dict(name='spectralnet', batch_size=128, epochs=30, lr=1e-4, weight_decay=1e-4),
-        #dict(name='lstm', batch_size=32, epochs=30, lr=1e-4, weight_decay=1e-8),
-        #dict(name='cnn', batch_size=512, epochs=30, lr=1e-3, weight_decay=0),
-        #ict(name='transformer', batch_size=30, epochs=30, lr=1e-4, weight_decay=1e-8),
-        #dict(name='spectralformer', batch_size=32, epochs=30, lr=1e-3, weight_decay=5e-4)
-    ]
+    dict(name='spectralnet', batch_size=128, epochs=30, lr=1e-4, weight_decay=1e-4),
+    dict(name='spectralnet', batch_size=256, epochs=40, lr=5e-4, weight_decay=1e-5),
+    
+    dict(name='lstm', batch_size=32, epochs=30, lr=1e-4, weight_decay=1e-8),
+    dict(name='lstm', batch_size=64, epochs=35, lr=5e-4, weight_decay=1e-6),
+    
+    dict(name='cnn', batch_size=512, epochs=30, lr=1e-3, weight_decay=0),
+    dict(name='cnn', batch_size=256, epochs=40, lr=1e-4, weight_decay=1e-5),
+    
+    dict(name='transformer', batch_size=30, epochs=30, lr=1e-4, weight_decay=1e-8),
+    dict(name='transformer', batch_size=64, epochs=50, lr=3e-4, weight_decay=1e-6),
+    
+    dict(name='spectralformer', batch_size=32, epochs=30, lr=1e-3, weight_decay=5e-4),
+    dict(name='spectralformer', batch_size=128, epochs=45, lr=2e-4, weight_decay=1e-5)
+]
+
     for classifier in Regression_1:
         main(classifier['name'], classifier['batch_size'], classifier['epochs'], classifier['lr'], classifier['weight_decay'])

@@ -5,7 +5,33 @@ from methods.dataloader import prepare_data
 from methods.ml import regress, build_regressor
 from methods.metrics_2 import print_results
 import os
+import numpy as np  
+
 os.environ["WANDB_SILENT"] = "true"  
+
+hyperparams = {
+    "svr": [
+        {"C": 1e3, "gamma": 0.1}, 
+        {"C": 1e4, "gamma": 0.01}, 
+        {"C": 1e5, "gamma": 1}
+    ],
+    "rfr": [
+        {"n_estimators": 100, "max_depth": 10},
+        {"n_estimators": 500, "max_depth": 15},
+        {"n_estimators": 1000, "max_depth": 20}
+    ],
+    "mlp": [
+        {"solver": "adam", "max_iter": 500, "alpha": 1e-4},
+        {"solver": "lbfgs", "max_iter": 1000, "alpha": 1e-3},
+        {"solver": "sgd", "max_iter": 1500, "alpha": 1e-2}
+    ],
+    "knnr": [
+        {"n_neighbors": 3},
+        {"n_neighbors": 5},
+        {"n_neighbors": 10}
+    ]
+}
+
 
 def init_parser():
     parser = argparse.ArgumentParser(description='Machine Learning Spectral Regression')
@@ -18,7 +44,8 @@ def init_parser():
                         choices=['svr', 'rfr', 'mlp', 'knnr'])
     return parser
 
-def main(regressor_name):
+
+def main(regressor_name, hyperparams_list):
     parser = init_parser()
     args = parser.parse_args()
 
@@ -26,42 +53,48 @@ def main(regressor_name):
     save_name = args.save_name
     dataset_name = args.dataset
 
-    # 🔹 Iniciar un experimento en Weights & Biases
-    wandb.init(project="spectral_regression_Machine_Learning", name=f"{regressor_name}_{dataset_name}", config={
-        "regressor": regressor_name,
-        "dataset": dataset_name,
-        "save_name": save_name
-    })
-
-    # Preparar datos y construir el modelo
     train_dataset, test_dataset, _, _ = prepare_data(dataset_name, dl=False)
-    regressor = build_regressor(regressor_name)
 
-    save_name += f"{args.dataset}_{regressor_name}"
-    train_dataset, test_dataset, dict_metrics = regress(regressor, train_dataset, test_dataset, save_name=save_name)
+    best_score = float("-inf")
+    best_params = None
 
-    # 🔹 Registrar métricas en Weights & Biases
-    for phase in ["train", "test"]:
-        for metric, values in dict_metrics[phase].items():
-            for var_name, value in values.items():
-                wandb.log({f"{phase}/{metric}_{var_name}": value})
+    for i, params in enumerate(hyperparams_list):
+        wandb.init(project="1spectral_regression_Machine_Learning", name=f"{regressor_name}_{dataset_name}_config_{i}", config=params)
+        
+        print(f"\n🔹 Entrenando {regressor_name} con {params}")
+        regressor = build_regressor(regressor_name, params)
+        _, _, dict_metrics = regress(regressor, train_dataset, test_dataset, save_name=f"{save_name}_{i}")
 
-    print_results(regressor_name, dataset_name, dict_metrics)
+        # 🔹 Guardar métricas en W&B correctamente
+        for dataset_name in ["train", "test"]:
+            for metric in ["mse", "r2", "mae"]:
+                for property_name, value in dict_metrics[dataset_name][metric].items():
+                    wandb.log({f"{dataset_name}/{metric}/{property_name}": value})
+        
+        # Evaluar métrica de interés (ejemplo: R² promedio en test)
+        r2_mean_test = np.mean([val for val in dict_metrics["test"]["r2"].values()])
 
-    wandb.finish()  # 🔹 Finalizar el experimento en wandb
+        if r2_mean_test > best_score:
+            best_score = r2_mean_test
+            best_params = params
 
-    return train_dataset, test_dataset, dict_metrics  # 🔹 Devuelve datasets y métricas
+        wandb.finish()
+    
+    print(f"\n🔹 Mejor configuración para {regressor_name}: {best_params} con R²={best_score:.4f}")
+
+    return best_params
+
 
 if __name__ == '__main__':
-    wandb.login()  # 🔹 Asegurar que está logueado en wandb
+    wandb.login()
 
     regressors = ['mlp', 'knnr', 'svr', 'rfr']
-    results = {}
+    best_configs = {}
 
     for regressor_name in regressors:
-        train_dataset, test_dataset, metrics = main(regressor_name)
-        results[regressor_name] = {
-            "train": train_dataset,
-            "test": test_dataset,
-            "metrics": metrics
-        }
+        best_params = main(regressor_name, hyperparams[regressor_name])
+        best_configs[regressor_name] = best_params
+
+    print("\n===== Mejor Configuración por Modelo =====")
+    for model, params in best_configs.items():
+        print(f"{model}: {params}")
