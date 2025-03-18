@@ -80,6 +80,8 @@ def normalize_data_min_max_by_row(data):
 
     return normalized_data
 
+'''
+
 def standardize_data(X_train, X_test):
     mean = np.mean(X_train, axis=0)
     std = np.std(X_train, axis=0)
@@ -136,10 +138,12 @@ def prepare_data1(dataset_name, split, seed, dl=False, dataset_params=None):
 
     return train_dataset, test_dataset, num_bands, num_outputs
 
+
+
 def prepare_data(dataset_name, dl=False, dataset_params=None):
     if dataset_name == 'cocoa_regression':  # Asegurar que este dataset está correctamente escrito
-        train_file = 'data/train_cocoa_dataset_normalized.h5'
-        test_file = 'data/test_cocoa_dataset_normalized.h5'
+        train_file = 'data/train_nir_cocoa_dataset_normalized.h5'
+        test_file = 'data/test_nir_cocoa_dataset_normalized.h5'
 
         # Verificar que los archivos existen
         import os
@@ -190,5 +194,74 @@ def prepare_data(dataset_name, dl=False, dataset_params=None):
     else:
         return dict(X=X_train, Y=Y_train), dict(X=X_test, Y=Y_test), num_bands, num_outputs
 
+'''
+
+import os
+import numpy as np
+import h5py
+import torch
+from torch.utils.data import TensorDataset, DataLoader
+
+def prepare_data(dataset_name, modality, dl=False, dataset_params=None):
+    """
+    Carga los datos en función de la modalidad seleccionada (NIR o VIS)
+    """
+    if modality == "NIR":
+        train_file = "data/train_nir_cocoa_dataset_normalized.h5"
+        test_file = "data/test_nir_cocoa_dataset_normalized.h5"
+        save_dir = "model/Deep_Learning/NIR"
+    elif modality == "VIS":
+        train_file = "data/train_cocoa_dataset_normalized.h5"
+        test_file = "data/test_cocoa_dataset_normalized.h5"
+        save_dir = "model/Deep_Learning/VIS"
+    else:
+        raise ValueError("Modalidad no válida. Usa 'NIR' o 'VIS'")
+    
+    # Verificar que los archivos existen
+    if not os.path.exists(train_file):
+        raise FileNotFoundError(f"Archivo no encontrado: {train_file}")
+    if not os.path.exists(test_file):
+        raise FileNotFoundError(f"Archivo no encontrado: {test_file}")
+    
+    # Cargar dataset de entrenamiento
+    with h5py.File(train_file, 'r') as f:
+        X_train = f['spec'][:]
+        Y_train = np.column_stack((f['cadmium'][:], f['fermentation_level'][:], f['moisture'][:], f['polyphenols'][:]))
+    
+    # Cargar dataset de prueba
+    with h5py.File(test_file, 'r') as f:
+        X_test = f['spec'][:]
+        Y_test = np.column_stack((f['cadmium'][:], f['fermentation_level'][:], f['moisture'][:], f['polyphenols'][:]))
+    
+    # Normalizar datos
+    X_train, X_test = standardize_data(X_train, X_test)
+    
+    num_bands = X_train.shape[-1]
+    num_outputs = Y_train.shape[-1]
+    
+    os.makedirs(save_dir, exist_ok=True)  # Crear directorio de guardado si no existe
+    
+    if dl:
+        X_train = torch.from_numpy(X_train).float()
+        Y_train = torch.from_numpy(Y_train).float()
+        train_dataset = TensorDataset(X_train, Y_train)
+        
+        X_test = torch.from_numpy(X_test).float()
+        Y_test = torch.from_numpy(Y_test).float()
+        test_dataset = TensorDataset(X_test, Y_test)
+        
+        train_loader = DataLoader(train_dataset, batch_size=dataset_params["batch_size"], shuffle=True, num_workers=dataset_params["num_workers"], pin_memory=True)
+        test_loader = DataLoader(test_dataset, batch_size=dataset_params["batch_size"], shuffle=False, num_workers=dataset_params["num_workers"], pin_memory=True)
+        
+        return train_loader, test_loader, num_bands, num_outputs, save_dir
+    else:
+        return dict(X=X_train, Y=Y_train), dict(X=X_test, Y=Y_test), num_bands, num_outputs, save_dir
+
+def standardize_data(X_train, X_test):
+    mean = np.mean(X_train, axis=0)
+    std = np.std(X_train, axis=0)
+    X_train_standardized = (X_train - mean) / std
+    X_test_standardized = (X_test - mean) / std
+    return X_train_standardized, X_test_standardized
 
 

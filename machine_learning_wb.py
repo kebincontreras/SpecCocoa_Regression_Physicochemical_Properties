@@ -1,100 +1,70 @@
+import os
 import wandb
 import argparse
-from torch.utils.tensorboard import SummaryWriter
+import json
+import numpy as np
 from methods.dataloader import prepare_data
 from methods.ml import regress, build_regressor
-from methods.metrics_2 import print_results
-import os
-import numpy as np  
 
-os.environ["WANDB_SILENT"] = "true"  
+os.environ["WANDB_SILENT"] = "true"
 
-hyperparams = {
-    "svr": [
-        {"C": 1e3, "gamma": 0.1}, 
-        {"C": 1e4, "gamma": 0.01}, 
-        {"C": 1e5, "gamma": 1}
-    ],
-    "rfr": [
-        {"n_estimators": 100, "max_depth": 10},
-        {"n_estimators": 500, "max_depth": 15},
-        {"n_estimators": 1000, "max_depth": 20}
-    ],
-    "mlp": [
-        {"solver": "adam", "max_iter": 500, "alpha": 1e-4},
-        {"solver": "lbfgs", "max_iter": 1000, "alpha": 1e-3},
-        {"solver": "sgd", "max_iter": 1500, "alpha": 1e-2}
-    ],
-    "knnr": [
-        {"n_neighbors": 3},
-        {"n_neighbors": 5},
-        {"n_neighbors": 10}
-    ]
-}
+def main(modality, config_file, wb_project):
+    """ Ejecuta Machine Learning para la modalidad indicada con configuraciones desde JSON. """
 
+    # 🔹 No agregamos "methods/" porque Main.py ya pasa la ruta correcta
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"❌ No se encontró el archivo de configuración: {config_file}")
 
-def init_parser():
-    parser = argparse.ArgumentParser(description='Machine Learning Spectral Regression')
-    parser.add_argument("--save-name", default="exp", type=str, help="Path to save specific experiment")
+    # 🔹 Cargar configuraciones desde JSON
+    with open(config_file, "r") as f:
+        hyperparams = json.load(f)
 
-    parser.add_argument("--dataset", type=str, default="cocoa_regression",
-                    choices=['cocoa_public', 'cocoa_regression'], help="Dataset name")
+    print(f"\n🚀 Ejecutando Machine Learning en {modality}...\n")
 
-    parser.add_argument('--regressor', type=str, default='none', help='Regressor name',
-                        choices=['svr', 'rfr', 'mlp', 'knnr'])
-    return parser
-
-
-def main(regressor_name, hyperparams_list):
-    parser = init_parser()
-    args = parser.parse_args()
-
-    args.regressor = regressor_name
-    save_name = args.save_name
-    dataset_name = args.dataset
-
-    train_dataset, test_dataset, _, _ = prepare_data(dataset_name, dl=False)
-
-    best_score = float("-inf")
-    best_params = None
-
-    for i, params in enumerate(hyperparams_list):
-        wandb.init(project="2spectral_regression_Machine_Learning", name=f"{regressor_name}_{dataset_name}_config_{i}", config=params)
-        
-        print(f"\n🔹 Entrenando {regressor_name} con {params}")
-        regressor = build_regressor(regressor_name, params)
-        _, _, dict_metrics = regress(regressor, train_dataset, test_dataset, save_name=f"{save_name}_{i}")
-
-        # 🔹 Guardar métricas en W&B correctamente
-        for dataset_name in ["train", "test"]:
-            for metric in ["mse", "r2", "mae"]:
-                for property_name, value in dict_metrics[dataset_name][metric].items():
-                    wandb.log({f"{dataset_name}/{metric}/{property_name}": value})
-        
-        # Evaluar métrica de interés (ejemplo: R² promedio en test)
-        r2_mean_test = np.mean([val for val in dict_metrics["test"]["r2"].values()])
-
-        if r2_mean_test > best_score:
-            best_score = r2_mean_test
-            best_params = params
-
-        wandb.finish()
+    # 🔹 Preparar datos
+    train_dataset, test_dataset, _, _, _ = prepare_data("cocoa_regression", modality, dl=False)
     
-    print(f"\n🔹 Mejor configuración para {regressor_name}: {best_params} con R²={best_score:.4f}")
-
-    return best_params
-
-
-if __name__ == '__main__':
-    wandb.login()
-
-    regressors = ['mlp', 'knnr', 'svr', 'rfr']
     best_configs = {}
 
-    for regressor_name in regressors:
-        best_params = main(regressor_name, hyperparams[regressor_name])
+    for regressor_name, params_list in hyperparams.items():
+        best_score = float("-inf")
+        best_params = None
+        
+        for i, params in enumerate(params_list):
+            wandb.init(
+                project=wb_project,
+                name=f"{regressor_name}_{modality}_config_{i}",
+                config=params
+            )
+
+            print(f"\n🔹 Entrenando {regressor_name} con {params} en {modality}")
+            regressor = build_regressor(regressor_name, params)
+            _, _, dict_metrics = regress(regressor, train_dataset, test_dataset, modality, save_name=f"{regressor_name}_{i}")
+
+            # 🔹 Registrar métricas en W&B
+            for dataset_name in ["train", "test"]:
+                for metric in ["mse", "r2", "mae"]:
+                    for property_name, value in dict_metrics[dataset_name][metric].items():
+                        wandb.log({f"{dataset_name}/{metric}/{property_name}": value})
+
+            # Evaluar métrica de interés (ejemplo: R² promedio en test)
+            r2_mean_test = np.mean(list(dict_metrics["test"]["r2"].values()))
+
+            if r2_mean_test > best_score:
+                best_score = r2_mean_test
+                best_params = params
+
+            wandb.finish()
+
         best_configs[regressor_name] = best_params
 
-    print("\n===== Mejor Configuración por Modelo =====")
-    for model, params in best_configs.items():
-        print(f"{model}: {params}")
+    print(f"\n✅ Machine Learning completado en {modality}.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Machine Learning Spectral Regression")
+    parser.add_argument("--modality", type=str, required=True, choices=["NIR", "VIS"])
+    parser.add_argument("--config", type=str, required=True, help="Archivo JSON con hiperparámetros")
+    parser.add_argument("--wb_project", type=str, required=True, help="Nombre del proyecto en W&B")
+
+    args = parser.parse_args()
+    main(args.modality, args.config, args.wb_project)
