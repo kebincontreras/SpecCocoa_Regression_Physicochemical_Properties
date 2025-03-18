@@ -1,0 +1,72 @@
+[
+    {
+        "name": "spectralnet",
+        "batch_size": 128,
+        "epochs": 60,
+        "lr": 0.0001,
+        "weight_decay": 0.0001
+    },
+    {
+        "name": "lstm",
+        "batch_size": 64,
+        "epochs": 35,
+        "lr": 0.0005,
+        "weight_decay": 1e-06
+    },
+    {
+        "name": "cnn",
+        "batch_size": 256,
+        "epochs": 40,
+        "lr": 0.0001,
+        "weight_decay": 1e-05
+    },
+    {
+        "name": "transformer",
+        "batch_size": 64,
+        "epochs": 50,
+        "lr": 0.0003,
+        "weight_decay": 1e-06
+    },
+    {
+        "name": "spectralformer",
+        "batch_size": 128,
+        "epochs": 45,
+        "lr": 0.0002,
+        "weight_decay": 1e-05
+    },
+    {
+        "name": "spectralnet",
+        "batch_size": 128,
+        "epochs": 90,
+        "lr": 0.0002,
+        "weight_decay": 5e-06
+    },
+    {
+        "name": "lstm",
+        "batch_size": 256,
+        "epochs": 100,
+        "lr": 0.0001,
+        "weight_decay": 1e-06
+    },
+    {
+        "name": "cnn",
+        "batch_size": 128,
+        "epochs": 75,
+        "lr": 0.0003,
+        "weight_decay": 1e-05
+    },
+    {
+        "name": "transformer",
+        "batch_size": 64,
+        "epochs": 80,
+        "lr": 0.0005,
+        "weight_decay": 1e-06
+    },
+    {
+        "name": "spectralformer",
+        "batch_size": 256,
+        "epochs": 120,
+        "lr": 0.0001,
+        "weight_decay": 1e-05
+    }
+]
