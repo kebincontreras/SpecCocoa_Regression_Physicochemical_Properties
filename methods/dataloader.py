@@ -234,7 +234,8 @@ def prepare_data(dataset_name, modality, dl=False, dataset_params=None):
         Y_test = np.column_stack((f['cadmium'][:], f['fermentation_level'][:], f['moisture'][:], f['polyphenols'][:]))
     
     # Normalizar datos
-    X_train, X_test = standardize_data(X_train, X_test)
+    #X_train, X_test = standardize_data(X_train, X_test)
+    X_train, X_test = normalize_data(X_train, X_test)
     
     num_bands = X_train.shape[-1]
     num_outputs = Y_train.shape[-1]
@@ -263,5 +264,11 @@ def standardize_data(X_train, X_test):
     X_train_standardized = (X_train - mean) / std
     X_test_standardized = (X_test - mean) / std
     return X_train_standardized, X_test_standardized
+
+def normalize_data(X_train, X_test):
+    X_train_normalized = X_train / np.max(X_train, axis=1, keepdims=True)
+    X_test_normalized = X_test / np.max(X_test, axis=1, keepdims=True)
+    return X_train_normalized, X_test_normalized
+
 
 
