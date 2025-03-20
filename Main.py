@@ -20,12 +20,12 @@ DL_MODELS = experiments["dl_models"]
 MODALITIES = ["VIS", "NIR"]
 
 # 🔹 Execute ML and DL (set False if not needed)
-EXECUTE_ML = True
+EXECUTE_ML = False
 EXECUTE_DL = True
 
 # 🔹 W&B Project Names
 WB_PROJECT_ML = "ML_Cocoa_Regression"
-WB_PROJECT_DL = "DL_Cocoa_Regression"
+WB_PROJECT_DL = "delet_DL_Cocoa_Regression"
 
 def run_experiments():
     """ Run ML and DL experiments based on the configuration in experiments.json """
