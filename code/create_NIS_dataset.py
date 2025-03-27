@@ -1,0 +1,520 @@
+import os
+import h5py
+import numpy as np
+
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.io import loadmat
+from scipy.ndimage import median_filter
+from scipy.signal import savgol_filter, medfilt
+
+from sklearn.decomposition import PCA
+from datetime import datetime
+
+from sklearn.linear_model import LinearRegression
+
+
+# functions
+
+def compute_sam(a, b):
+    assert a.ndim == 2, "a must have two dimensions, if you only have one, please add an new dimension in the first place"
+    assert b.ndim == 2, "b must have two dimensions, if you only have one, please add an new dimension in the first place"
+
+    a_norm = np.linalg.norm(a, axis=-1, keepdims=True)
+    b_norm = np.linalg.norm(b, axis=-1, keepdims=True)
+    return np.arccos(np.clip(np.matmul(a, b.T) / np.matmul(a_norm, b_norm.T), a_min=-1.0, a_max=1.0))
+
+
+def compute_msc(spectra):
+    B, L = spectra.shape  # Número de firmas y bandas espectrales
+    mean_spectrum = np.mean(spectra, axis=0)  # Espectro de referencia promedio
+
+    spectra_msc = np.zeros_like(spectra)
+
+    for i in range(B):
+        # Ajuste de regresión lineal: X_i = a * X_ref + b
+        X_i = spectra[i, :].reshape(-1, 1)  # Convertimos a columna
+        X_ref = mean_spectrum.reshape(-1, 1)
+
+        model = LinearRegression()
+        model.fit(X_ref, X_i)
+
+        a = model.coef_[0, 0]  # Pendiente
+        b = model.intercept_[0]  # Intersección
+
+        # Aplicar la corrección MSC
+        spectra_msc[i, :] = (spectra[i, :] - b) / a
+
+    return spectra_msc
+
+
+# =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# Dataset parameters
+# =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+base_dir = r"C:\Users\USUARIO\Documents\Base de datos\Spectral_signatures_of_cocoa_beans"
+out_dir = os.path.join("built_datasets")
+os.makedirs(out_dir, exist_ok=True)
+
+# set variables
+
+efficiency_range = [1100, 2000]  # nanometers (this is the spectral range of the data)
+entrega1_white_scaling = 1.0  # this is the number of converyor belt spectral signature samples for sam metric
+conveyor_belt_samples = 500  # for sam metric
+angle_error = 0.25  # angle error between conveyor belt and cocoa signatures
+max_num_samples = 500  # selected samples from lot with higher sam
+
+cocoa_batch_size = 100  # guillotine methodology (number of cocoa bean samples)
+cocoa_batch_samples = 2000  # number of batch samples (number of repetitions of cocoa_batch_size)
+
+plot_num_samples = 500  # number of samples to plot
+debug = False  # debug mode
+debug_pca = True  # debug pca mode
+
+# =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+# Dataset initialization
+# =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
+
+# set variables for cocoa dataset
+
+entrega_numbers = [4, 4, 1, 1, 3, 4, 4, 2, 1, 2, 1, 2, 3, 1, 2, 3, 3]
+ferm_levels = [30, 45, 60, 66, 66, 70, 70, 73, 84, 85, 92, 94, 94, 96, 96, 96, 100]
+colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray',
+          '#FF6347', '#4682B4', '#32CD32', '#FFD700', '#8A2BE2', '#5F9EA0',
+          '#D2691E', '#DC143C', '#00CED1']
+
+# Lista de marcadores únicos
+markers = [
+    'o', 's', 'D', 'P', 'X', '*', 'v', '^',
+    '<', '>', 'h', 'H', '+', 'x', '|', '_', 'd'
+]
+
+pcas = {}
+mean_pcas = {}
+
+# set path to cocoa dataset
+
+full_cocoa_paths = {
+    'train': {
+        0: {"P": "22_11_2024/Optical_lab_spectral/NIR",
+            "L": "L1F30H096E221124C191224NIRTRAIFULL.mat",
+            "B": "B1F30H096E221124C191224NIRTRAIFULL.mat",
+            "N": "N1F30H096E221124C191224NIRTRAIFULL.mat",
+            "E": "Entrega 4"},
+        1: {"P": "22_11_2024/Optical_lab_spectral/NIR",
+            "L": "L2F45H144E221124C191224NIRTRAIFULL.mat",
+            "B": "B2F45H144E221124C191224NIRTRAIFULL.mat",
+            "N": "N2F45H144E221124C191224NIRTRAIFULL.mat",
+            "E": "Entrega 4"},
+        2: {"P": "09_05_2024/Optical_lab_spectral/NIR",
+            "L": "L1F60H096R290324C030724NIRTRAIFULL.mat",
+            "B": "B1F60H096R290324C030724NIRTRAIFULL.mat",
+            "N": "N1F60H096R290324C030724NIRTRAIFULL.mat",
+            "E": "Entrega 1"},
+        3: {"P": "09_05_2024/Optical_lab_spectral/NIR",
+            "L": "L2F66H144R310324C030724NIRTRAIFULL.mat",
+            "B": "B2F66H144R310324C030724NIRTRAIFULL.mat",
+            "N": "N2F66H144R310324C030724NIRTRAIFULL.mat",
+            "E": "Entrega 1"},
+        4: {"P": "22_10_2024/Optical_lab_spectral/NIR",
+            "L": "L1F66H096E221024C101224NIRTRAIFULL.mat",
+            "B": "B1F66H096E221024C101224NIRTRAIFULL.mat",
+            "N": "N1F66H096E221024C101224NIRTRAIFULL.mat",
+            "E": "Entrega 3"},
+        5: {"P": "22_11_2024/Optical_lab_spectral/NIR",
+            "L": "L3F70H192E221124C191224NIRTRAIFULL.mat",
+            "B": "B3F70H192E221124C191224NIRTRAIFULL.mat",
+            "N": "N3F70H192E221124C191224NIRTRAIFULL.mat",
+            "E": "Entrega 4"},
+        6: {"P": "22_11_2024/Optical_lab_spectral/NIR",
+            "L": "L4F70H264E221124C191224NIRTRAIFULL.mat",
+            "B": "B4F70H264E221124C191224NIRTRAIFULL.mat",
+            "N": "N4F70H264E221124C191224NIRTRAIFULL.mat",
+            "E": "Entrega 4"},
+        7: {"P": "02_07_2024/Optical_lab_spectral/NIR",
+            "L": "L2F73H144E270624C100724NIRTRAIFULL.mat",
+            "B": "B2F73H144E270624C100724NIRTRAIFULL.mat",
+            "N": "N2F73H144E270624C100724NIRTRAIFULL.mat",
+            "E": "Entrega 2"},
+        8: {"P": "09_05_2024/Optical_lab_spectral/NIR",
+            "L": "L3F84H192R020424C020724NIRTRAIFULL.mat",
+            "B": "B3F84H192R020424C020724NIRTRAIFULL.mat",
+            "N": "N3F84H192R020424C020724NIRTRAIFULL.mat",
+            "E": "Entrega 1"},
+        9: {"P": "02_07_2024/Optical_lab_spectral/NIR",
+            "L": "L1F85H110E270624C100724NIRTRAIFULL.mat",
+            "B": "B1F85H110E270624C100724NIRTRAIFULL.mat",
+            "N": "N1F85H110E270624C100724NIRTRAIFULL.mat",
+            "E": "Entrega 2"},
+        10: {"P": "09_05_2024/Optical_lab_spectral/NIR",
+             "L": "L4F92H264R130424C030724NIRTRAIFULL.mat",
+             "B": "B4F92H264R130424C030724NIRTRAIFULL.mat",
+             "N": "N4F92H264R130424C030724NIRTRAIFULL.mat",
+             "E": "Entrega 1"},
+        11: {"P": "02_07_2024/Optical_lab_spectral/NIR",
+             "L": "L3F94H216E270624C180724NIRTRAIFULL.mat",
+             "B": "B3F94H216E270624C180724NIRTRAIFULL.mat",
+             "N": "N3F94H216E270624C180724NIRTRAIFULL.mat",
+             "E": "Entrega 2"},
+        12: {"P": "22_10_2024/Optical_lab_spectral/NIR",
+             "L": "L2F94H144E221024C101224NIRTRAIFULL.mat",
+             "B": "B2F94H144E221024C101224NIRTRAIFULL.mat",
+             "N": "N2F94H144E221024C101224NIRTRAIFULL.mat",
+             "E": "Entrega 3"},
+        13: {"P": "02_07_2024/Optical_lab_spectral/NIR",
+             "L": "L4F96H252E270624C180724NIRTRAIFULL.mat",
+             "B": "B4F96H252E270624C180724NIRTRAIFULL.mat",
+             "N": "N4F96H252E270624C180724NIRTRAIFULL.mat",
+             "E": "Entrega 2"},
+        14: {"P": "22_10_2024/Optical_lab_spectral/NIR",
+             "L": "L3F96H192E221024C101224NIRTRAIFULL.mat",
+             "B": "B3F96H192E221024C101224NIRTRAIFULL.mat",
+             "N": "N3F96H192E221024C101224NIRTRAIFULL.mat",
+             "E": "Entrega 3"},
+        15: {"P": "22_10_2024/Optical_lab_spectral/NIR",
+             "L": "L4F100H264E221024C101224NIRTRAIFULL.mat",
+             "B": "B4F100H264E221024C101224NIRTRAIFULL.mat",
+             "N": "N4F100H264E221024C101224NIRTRAIFULL.mat",
+             "E": "Entrega 3"},
+    },
+    'test': {
+        0: {"P": "22_11_2024/Optical_lab_spectral/NIR",
+            "L": "L1F30H096E221124C191224NIRTESTFULL.mat",
+            "B": "B1F30H096E221124C191224NIRTESTFULL.mat",
+            "N": "N1F30H096E221124C191224NIRTESTFULL.mat",
+            "E": "Entrega 4"},
+        1: {"P": "22_11_2024/Optical_lab_spectral/NIR",
+            "L": "L2F45H144E221124C191224NIRTESTFULL.mat",
+            "B": "B2F45H144E221124C191224NIRTESTFULL.mat",
+            "N": "N2F45H144E221124C191224NIRTESTFULL.mat",
+            "E": "Entrega 4"},
+        2: {"P": "09_05_2024/Optical_lab_spectral/NIR",
+            "L": "L1F60H096R290324C030724NIRTESTFULL.mat",
+            "B": "B1F60H096R290324C030724NIRTESTFULL.mat",
+            "N": "N1F60H096R290324C030724NIRTESTFULL.mat",
+            "E": "Entrega 1"},
+        3: {"P": "09_05_2024/Optical_lab_spectral/NIR",
+            "L": "L2F66H144R310324C030724NIRTESTFULL.mat",
+            "B": "B2F66H144R310324C030724NIRTESTFULL.mat",
+            "N": "N2F66H144R310324C030724NIRTESTFULL.mat",
+            "E": "Entrega 1"},
+        4: {"P": "22_10_2024/Optical_lab_spectral/NIR",
+            "L": "L1F66H096E221024C101224NIRTESTFULL.mat",
+            "B": "B1F66H096E221024C101224NIRTESTFULL.mat",
+            "N": "N1F66H096E221024C101224NIRTESTFULL.mat",
+            "E": "Entrega 3"},
+        5: {"P": "22_11_2024/Optical_lab_spectral/NIR",
+            "L": "L3F70H192E221124C191224NIRTESTFULL.mat",
+            "B": "B3F70H192E221124C191224NIRTESTFULL.mat",
+            "N": "N3F70H192E221124C191224NIRTESTFULL.mat",
+            "E": "Entrega 4"},
+        6: {"P": "22_11_2024/Optical_lab_spectral/NIR",
+            "L": "L4F70H264E221124C191224NIRTESTFULL.mat",
+            "B": "B4F70H264E221124C191224NIRTESTFULL.mat",
+            "N": "N4F70H264E221124C191224NIRTESTFULL.mat",
+            "E": "Entrega 4"},
+        7: {"P": "02_07_2024/Optical_lab_spectral/NIR",
+            "L": "L2F73H144E270624C180724NIRTESTFULL.mat",
+            "B": "B2F73H144E270624C180724NIRTESTFULL.mat",
+            "N": "N2F73H144E270624C180724NIRTESTFULL.mat",
+            "E": "Entrega 2"},
+        8: {"P": "09_05_2024/Optical_lab_spectral/NIR",
+            "L": "L3F84H192R020424C030724NIRTESTFULL.mat",
+            "B": "B3F84H192R020424C030724NIRTESTFULL.mat",
+            "N": "N3F84H192R020424C030724NIRTESTFULL.mat",
+            "E": "Entrega 1"},
+        9: {"P": "02_07_2024/Optical_lab_spectral/NIR",
+            "L": "L1F85H110E270624C180724NIRTESTFULL.mat",
+            "B": "B1F85H110E270624C180724NIRTESTFULL.mat",
+            "N": "N1F85H110E270624C180724NIRTESTFULL.mat",
+            "E": "Entrega 2"},
+        10: {"P": "09_05_2024/Optical_lab_spectral/NIR",
+             "L": "L4F92H264R130424C030724NIRTESTFULL.mat",
+             "B": "B4F92H264R130424C030724NIRTESTFULL.mat",
+             "N": "N4F92H264R130424C030724NIRTESTFULL.mat",
+             "E": "Entrega 1"},
+        11: {"P": "02_07_2024/Optical_lab_spectral/NIR",
+             "L": "L3F94H216E270624C180724NIRTESTFULL.mat",
+             "B": "B3F94H216E270624C180724NIRTESTFULL.mat",
+             "N": "N3F94H216E270624C180724NIRTESTFULL.mat",
+             "E": "Entrega 2"},
+        12: {"P": "22_10_2024/Optical_lab_spectral/NIR",
+             "L": "L2F94H144E221024C101224NIRTESTFULL.mat",
+             "B": "B2F94H144E221024C101224NIRTESTFULL.mat",
+             "N": "N2F94H144E221024C101224NIRTESTFULL.mat",
+             "E": "Entrega 3"},
+        13: {"P": "02_07_2024/Optical_lab_spectral/NIR",
+             "L": "L4F96H252E270624C180724NIRTESTFULL.mat",
+             "B": "B4F96H252E270624C180724NIRTESTFULL.mat",
+             "N": "N4F96H252E270624C180724NIRTESTFULL.mat",
+             "E": "Entrega 2"},
+        14: {"P": "22_10_2024/Optical_lab_spectral/NIR",
+             "L": "L3F96H192E221024C101224NIRTESTFULL.mat",
+             "B": "B3F96H192E221024C101224NIRTESTFULL.mat",
+             "N": "N3F96H192E221024C101224NIRTESTFULL.mat",
+             "E": "Entrega 3"},
+        15: {"P": "22_10_2024/Optical_lab_spectral/NIR",
+             "L": "L4F100H264E221024C101224NIRTESTFULL.mat",
+             "B": "B4F100H264E221024C101224NIRTESTFULL.mat",
+             "N": "N4F100H264E221024C101224NIRTESTFULL.mat",
+             "E": "Entrega 3"},
+    },
+}
+
+# load wavelengths
+
+wavelenghts_path = '22_11_2024/Optical_lab_spectral/NIR'
+wavelengths = next(
+    v for k, v in loadmat(os.path.join(base_dir, wavelenghts_path, 'wavelengths_NIR.mat')).items() if
+    not k.startswith('__')).squeeze()
+# set threshold between 400 and 900 nm
+
+efficiency_threshold = (efficiency_range[0] <= wavelengths) & (wavelengths <= efficiency_range[1])
+wavelengths = wavelengths[efficiency_threshold]
+
+# load labels via pandas
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
+pd_labels = pd.read_excel(os.path.join(base_dir, 'Labels.xlsx'))
+
+# load and build dataset
+
+for subset_name, lot_filenames in full_cocoa_paths.items():
+    print(f"Processing {subset_name} subset")
+
+    cocoa_bean_dataset = []
+    label_dataset = []
+    cocoa_bean_batch_mean_dataset = []
+    label_batch_mean_dataset = []
+
+    output_data_dir = os.path.join(os.getcwd(), "data")
+    os.makedirs(output_data_dir, exist_ok=True)
+
+
+
+    h5_path = os.path.join(output_data_dir, f'{subset_name}_nir_cocoa_dataset.h5')
+    with h5py.File(h5_path, 'w') as d:
+
+        dataset = d.create_dataset('spec', shape=(0, len(wavelengths)), maxshape=(None, len(wavelengths)),
+                                   chunks=(256, len(wavelengths)), dtype=np.float32)
+        fermset = d.create_dataset('fermentation_level', (0, 1), maxshape=(None, 1), chunks=(256, 1), dtype=np.uint8)
+        moistset = d.create_dataset('moisture', (0, 1), maxshape=(None, 1), chunks=(256, 1), dtype=np.float32)
+        cadmiumset = d.create_dataset('cadmium', (0, 1), maxshape=(None, 1), chunks=(256, 1), dtype=np.float32)
+        polyset = d.create_dataset('polyphenols', (0, 1), maxshape=(None, 1), chunks=(256, 1), dtype=np.float32)
+
+
+        # Append new data to dataset
+        def append_to_dataset(dataset, new_data):
+            current_shape = dataset.shape
+            new_shape = (current_shape[0] + new_data.shape[0], current_shape[1])
+            dataset.resize(new_shape)
+            dataset[current_shape[0]:] = new_data
+
+        for label, lot_filename in lot_filenames.items():
+            print(f"Processing {lot_filename['E']} - {lot_filename['L']}")
+            cocoa_path = os.path.join(base_dir, lot_filename['P'])
+
+            white = next(
+                v for k, v in loadmat(os.path.join(cocoa_path, lot_filename['B'])).items() if not k.startswith('__'))
+            black = next(
+                v for k, v in loadmat(os.path.join(cocoa_path, lot_filename['N'])).items() if not k.startswith('__'))
+            lot = next(
+                v for k, v in loadmat(os.path.join(cocoa_path, lot_filename['L'])).items() if not k.startswith('__'))[1:]
+
+            # apply efficiency threshold
+
+            white = white[:, efficiency_threshold]
+            black = black[:, efficiency_threshold]
+            lot = lot[:, efficiency_threshold]
+
+            if lot_filename['E'] in ['Entrega 1', 'Entrega 2']:
+                lot = lot + black.mean(axis=0)[None, ...]
+
+            if lot_filename['E'] in ['Entrega 1']:
+                white_max = white.max(axis=1)
+                white_max_index = white_max.argsort()[-10:]
+                white = white[white_max_index]
+
+            # process white and black
+
+            white = white.mean(axis=0)[None, ...]
+            black = black.mean(axis=0)[None, ...]
+
+            # lot = (lot - black) / (white - black)
+            # lot = lot / lot.max(axis=-1, keepdims=True)
+
+            if debug:
+                plt.figure(figsize=(8, 8))
+                plt.suptitle(lot_filename['E'] + ' - ' + lot_filename['L'])
+
+                plt.subplot(3, 1, 1)
+                plt.plot(wavelengths, white[::white.shape[0] // plot_num_samples + 1].T, alpha=0.5)
+                plt.title('White')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Intensity')
+                plt.grid()
+
+                plt.subplot(3, 1, 2)
+                plt.plot(wavelengths, black[::black.shape[0] // plot_num_samples + 1].T, alpha=0.5)
+                plt.title('Black')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Intensity')
+                plt.grid()
+
+                plt.subplot(3, 1, 3)
+                plt.plot(wavelengths, lot[::lot.shape[0] // plot_num_samples + 1].T, alpha=0.5)
+                plt.title('Lot')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Intensity')
+                plt.grid()
+
+                plt.tight_layout()
+                plt.show()
+
+            # get conveyor belt signatures
+
+            conveyor_belt = lot[:conveyor_belt_samples, :]
+            cc_distances = compute_sam(lot, conveyor_belt)
+            lot_distances = cc_distances.min(axis=-1)
+            sorted_indices = np.argsort(lot_distances)[::-1]  # from higher sam to lower
+            selected_indices = np.sort(sorted_indices[:max_num_samples])
+            selected_cocoa = lot[selected_indices, :]
+
+            if debug:
+                plt.figure(figsize=(8, 8))
+                plt.suptitle(lot_filename['E'] + ' - ' + lot_filename['L'])
+
+                plt.subplot(3, 1, 1)
+                plt.plot(wavelengths, conveyor_belt.T, alpha=0.5)
+                plt.title('Conveyor Belt')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Intensity')
+                plt.grid()
+
+                plt.subplot(3, 1, 2)
+                plt.plot(np.sort(lot_distances))
+                plt.axvline(x=lot_distances.shape[0] - max_num_samples, color='r', linestyle='--',
+                            label=f'Threshold for {max_num_samples} samples')
+                plt.title('Sorted Lot Distances')
+                plt.xlabel('Lot Sample')
+                plt.ylabel('SAM')
+                plt.grid()
+                plt.legend()
+
+                plt.subplot(3, 1, 3)
+                plt.plot(wavelengths, selected_cocoa[::selected_cocoa.shape[0] // plot_num_samples + 1].T, alpha=0.5)
+                plt.title('Selected Cocoa')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Intensity')
+                plt.grid()
+
+                plt.tight_layout()
+                plt.show()
+
+            # get cocoa lot with reflectance
+
+            selected_cocoa_reflectance = (selected_cocoa - black) / (white - black)
+            selected_cocoa_reflectance = selected_cocoa_reflectance / selected_cocoa_reflectance.max(axis=-1, keepdims=True)
+            # selected_cocoa_reflectance = selected_cocoa
+
+            if debug:
+                plt.figure(figsize=(8, 8))
+                plt.suptitle(lot_filename['E'] + ' - ' + lot_filename['L'])
+
+                plt.subplot(3, 1, 1)
+                plt.plot(wavelengths, white[::white.shape[0] // plot_num_samples + 1].T, alpha=0.5)
+                plt.title('White')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Intensity')
+                plt.grid()
+
+                plt.subplot(3, 1, 2)
+                plt.plot(wavelengths, black[::black.shape[0] // plot_num_samples + 1].T, alpha=0.5)
+                plt.title('Black')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Intensity')
+                plt.grid()
+
+                plt.subplot(3, 1, 3)
+                plt.plot(wavelengths,
+                         selected_cocoa_reflectance[::selected_cocoa_reflectance.shape[0] // plot_num_samples + 1].T,
+                         alpha=0.5)
+                plt.title('Selected Cocoa Reflectance')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Reflectance')
+                plt.grid()
+
+                plt.tight_layout()
+                plt.show()
+
+            # filtering
+
+            # selected_cocoa_reflectance_median = savgol_filter(selected_cocoa_reflectance.copy(), 15, 2)
+            selected_cocoa_reflectance_median = median_filter(selected_cocoa_reflectance.copy(), 10)
+            # selected_cocoa_reflectance_median_msc = compute_msc(selected_cocoa_reflectance_median.copy())
+
+            if debug:
+                plt.figure(figsize=(8, 8))
+                plt.suptitle(lot_filename['E'] + ' - ' + lot_filename['L'])
+
+                plt.subplot(2, 1, 1)
+                plt.plot(wavelengths,
+                         selected_cocoa_reflectance[::selected_cocoa_reflectance.shape[0] // plot_num_samples + 1].T,
+                         alpha=0.5)
+                plt.title('Selected Cocoa Reflectance')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Reflectance')
+                plt.grid()
+
+                plt.subplot(2, 1, 2)
+                plt.plot(wavelengths,
+                         selected_cocoa_reflectance_median[
+                         ::selected_cocoa_reflectance_median.shape[0] // plot_num_samples + 1].T,
+                         alpha=0.5)
+                plt.title('Selected Cocoa Reflectance Median')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Reflectance')
+                plt.grid()
+
+                # plt.subplot(3, 1, 3)
+                # plt.plot(wavelengths,
+                #          selected_cocoa_reflectance_median_msc[
+                #          ::selected_cocoa_reflectance_median_msc.shape[0] // plot_num_samples + 1].T,
+                #          alpha=0.5)
+                # plt.title('Selected Cocoa Reflectance Median MSC')
+                # plt.xlabel('Wavelength [nm]')
+                # plt.ylabel('Reflectance')
+                # plt.grid()
+
+                plt.tight_layout()
+                plt.show()
+
+            # append to dataset
+
+            cocoa_bean_dataset.append(selected_cocoa_reflectance_median)
+            label_dataset.append(np.ones(selected_cocoa_reflectance_median.shape[0], dtype=int) * label)
+
+            # shuffle and batch mean
+            cocoa_bean_batch_mean_aux = []
+            for i in range(cocoa_batch_samples):
+                random_indices = np.random.choice(selected_cocoa_reflectance_median.shape[0], cocoa_batch_size,
+                                                  replace=False)
+                cocoa_bean_batch_mean_aux.append(selected_cocoa_reflectance_median[random_indices].mean(axis=0))
+
+            cocoa_bean_batch_mean_aux = np.stack(cocoa_bean_batch_mean_aux, axis=0)
+            cocoa_bean_batch_mean_dataset.append(cocoa_bean_batch_mean_aux)
+            label_batch_mean_dataset.append(np.ones(cocoa_bean_batch_mean_aux.shape[0], dtype=int) * label)
+
+            # save dataset
+
+            append_to_dataset(dataset, cocoa_bean_batch_mean_aux)
+
+            ones_vector = np.ones((cocoa_bean_batch_mean_aux.shape[0], 1), dtype=int)
+            gt_label = pd_labels[pd_labels['Lot'].str.contains(lot_filename['L'][:12])]
+            append_to_dataset(fermset, ones_vector * gt_label['Fermentation'].values[0])
+            append_to_dataset(moistset, ones_vector * gt_label['Moisture'].values[0])
+            append_to_dataset(cadmiumset, ones_vector * float(gt_label['Cadmium'].values[0].replace('<', '')))
+            append_to_dataset(polyset, ones_vector * gt_label['Polyphenols'].values[0])
+
+    

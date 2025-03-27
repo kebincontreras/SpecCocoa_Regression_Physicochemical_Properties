@@ -15,24 +15,10 @@
             {"solver": "adam", "max_iter": 800, "alpha": 0.0005, "learning_rate": "constant"}, {"solver": "adam", "max_iter": 1000, "alpha": 0.00001, "learning_rate": "adaptive"},
             {"solver": "lbfgs", "max_iter": 2000, "alpha": 0.01}, {"solver": "sgd", "max_iter": 2000, "alpha": 0.001, "momentum": 0.9},
             {"solver": "adam", "max_iter": 2000, "alpha": 0.000001, "hidden_layer_sizes": [100, 50]}
-        ],
-        "knnr": [
-            {"n_neighbors": 3}, {"n_neighbors": 5}, {"n_neighbors": 10}, {"n_neighbors": 2, "weights": "distance"},
-            {"n_neighbors": 8, "weights": "uniform"}, {"n_neighbors": 15, "weights": "distance"},
-            {"n_neighbors": 7, "p": 1}, {"n_neighbors": 10, "p": 2}
         ]
     },
 
     "dl_models": [
-        {"name": "spectralnet", "batch_size": 128, "epochs": 60, "lr": 0.0001, "weight_decay": 0.0001},
-        {"name": "lstm", "batch_size": 64, "epochs": 35, "lr": 0.0005, "weight_decay": 0.000001},
-        {"name": "cnn", "batch_size": 256, "epochs": 40, "lr": 0.0001, "weight_decay": 0.00001},
-        {"name": "transformer", "batch_size": 64, "epochs": 50, "lr": 0.0003, "weight_decay": 0.000001},
-        {"name": "spectralformer", "batch_size": 128, "epochs": 45, "lr": 0.0002, "weight_decay": 0.00001},
-        {"name": "spectralnet", "batch_size": 128, "epochs": 90, "lr": 0.0002, "weight_decay": 0.000005},
-        {"name": "lstm", "batch_size": 256, "epochs": 100, "lr": 0.0001, "weight_decay": 0.000001},
-        {"name": "cnn", "batch_size": 128, "epochs": 75, "lr": 0.0003, "weight_decay": 0.00001},
-        {"name": "transformer", "batch_size": 64, "epochs": 80, "lr": 0.0005, "weight_decay": 0.000001},
-        {"name": "spectralformer", "batch_size": 256, "epochs": 120, "lr": 0.0001, "weight_decay": 0.00001}
+        {"name": "spectralformer", "batch_size": 256, "epochs": 300, "lr": 0.001, "weight_decay": 0}
     ]
 }

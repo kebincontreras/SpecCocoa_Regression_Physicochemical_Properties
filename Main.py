@@ -1,12 +1,15 @@
 import subprocess
 import json
 import os
+import torch
 
 # 🔹 Path to the JSON experiment file
 EXPERIMENTS_FILE = "methods/experiments.json"
 
 # 🔹 Ensure the `methods` directory exists
 os.makedirs("methods", exist_ok=True)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 # 🔹 Read the experiment configurations
 with open(EXPERIMENTS_FILE, "r") as f:
@@ -17,15 +20,18 @@ ML_HYPERPARAMS = experiments["ml_hyperparams"]
 DL_MODELS = experiments["dl_models"]
 
 # 🔹 Define modalities (VIS first, then NIR)
-MODALITIES = ["VIS", "NIR"]
+#MODALITIES = ["VIS"]
+MODALITIES = [ "NIR" ]
+#MODALITIES = ["VIS", "NIR"]
+
 
 # 🔹 Execute ML and DL (set False if not needed)
 EXECUTE_ML = False
 EXECUTE_DL = True
 
 # 🔹 W&B Project Names
-WB_PROJECT_ML = "ML_Cocoa_Regression"
-WB_PROJECT_DL = "delet_DL_Cocoa_Regression"
+WB_PROJECT_ML = "Final_VIS_ML_Cocoa_Regression"
+WB_PROJECT_DL = "Final_VIS_DL_Cocoa_Regression"
 
 def run_experiments():
     """ Run ML and DL experiments based on the configuration in experiments.json """
@@ -62,3 +68,4 @@ def run_experiments():
 
 if __name__ == "__main__":
     run_experiments()
+

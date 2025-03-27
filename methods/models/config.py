@@ -8,7 +8,7 @@ config_lstm = dict(
 )
 
 config_cnn = dict(
-    conv_layers=[64],  # [64, 128, 256, 256, 256],
+    conv_layers=[64], 
     kernel_size=3,
     pool_size=2,
     dropout_rate=0.15,

@@ -117,36 +117,5 @@
                 50
             ]
         }
-    ],
-    "knnr": [
-        {
-            "n_neighbors": 3
-        },
-        {
-            "n_neighbors": 5
-        },
-        {
-            "n_neighbors": 10
-        },
-        {
-            "n_neighbors": 2,
-            "weights": "distance"
-        },
-        {
-            "n_neighbors": 8,
-            "weights": "uniform"
-        },
-        {
-            "n_neighbors": 15,
-            "weights": "distance"
-        },
-        {
-            "n_neighbors": 7,
-            "p": 1
-        },
-        {
-            "n_neighbors": 10,
-            "p": 2
-        }
     ]
 }

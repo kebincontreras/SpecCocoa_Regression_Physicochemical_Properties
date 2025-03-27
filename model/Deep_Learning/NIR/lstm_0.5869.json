@@ -1,0 +1,7 @@
+{
+    "name": "lstm",
+    "batch_size": 256,
+    "epochs": 100,
+    "lr": 0.001,
+    "weight_decay": 0
+}
