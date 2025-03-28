@@ -1,7 +1,0 @@
-{
-    "name": "lstm",
-    "batch_size": 64,
-    "epochs": 35,
-    "lr": 0.0005,
-    "weight_decay": 1e-06
-}
