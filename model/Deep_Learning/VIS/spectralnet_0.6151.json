@@ -1,0 +1,14 @@
+{
+    "name": "spectralnet",
+    "batch_size": 32,
+    "epochs": 2,
+    "lr": 0.0005,
+    "weight_decay": 0,
+    "test_r2": {
+        "Cadmium": 0.6377942484615542,
+        "Fermentation Level": 0.6816975100839813,
+        "Moisture": 0.7671277684937726,
+        "Polyphenols": 0.37390099596047266
+    },
+    "test_r2_mean": 0.6151301307499452
+}

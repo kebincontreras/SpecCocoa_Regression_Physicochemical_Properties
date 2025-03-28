@@ -1,7 +1,0 @@
-{
-    "name": "cnn",
-    "batch_size": 128,
-    "epochs": 75,
-    "lr": 0.001,
-    "weight_decay": 0
-}

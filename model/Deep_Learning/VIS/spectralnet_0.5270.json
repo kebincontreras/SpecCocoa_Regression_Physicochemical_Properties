@@ -1,7 +1,0 @@
-{
-    "name": "spectralnet",
-    "batch_size": 128,
-    "epochs": 90,
-    "lr": 0.0002,
-    "weight_decay": 5e-06
-}

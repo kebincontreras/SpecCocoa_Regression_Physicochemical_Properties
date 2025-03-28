@@ -1,0 +1,42 @@
+{
+    "train": {
+        "mse": {
+            "Cadmium": 0.0022361408982929532,
+            "Fermentation Level": 0.002846383307807973,
+            "Moisture": 0.002880766572317198,
+            "Polyphenols": 0.004566378605421175
+        },
+        "r2": {
+            "Cadmium": 0.971610314412289,
+            "Fermentation Level": 0.9244193410429724,
+            "Moisture": 0.7148822096312065,
+            "Polyphenols": 0.7299273541999477
+        },
+        "mae": {
+            "Cadmium": 0.039955739777526325,
+            "Fermentation Level": 0.046624405992164705,
+            "Moisture": 0.04598404471664572,
+            "Polyphenols": 0.06346081242130112
+        }
+    },
+    "test": {
+        "mse": {
+            "Cadmium": 0.012906759029597667,
+            "Fermentation Level": 0.008268808891379435,
+            "Moisture": 0.003208268321993734,
+            "Polyphenols": 0.006891475136957356
+        },
+        "r2": {
+            "Cadmium": 0.8361378609521662,
+            "Fermentation Level": 0.780436449621581,
+            "Moisture": 0.6824684152936187,
+            "Polyphenols": 0.5924124816339698
+        },
+        "mae": {
+            "Cadmium": 0.08903154173730295,
+            "Fermentation Level": 0.06749695550213212,
+            "Moisture": 0.044971861607617895,
+            "Polyphenols": 0.07468735375651957
+        }
+    }
+}

@@ -1,24 +1,33 @@
 {
     "ml_hyperparams": {
         "svr": [
-            {"C": 1000, "gamma": 0.1}, {"C": 10000, "gamma": 0.01}, {"C": 100000, "gamma": 1},
-            {"C": 500, "gamma": 0.05}, {"C": 20000, "gamma": 0.001}, {"C": 1000000, "gamma": 0.5},
-            {"C": 1000, "gamma": "scale"}, {"C": 50000, "gamma": "auto"}
-        ],
-        "rfr": [
-            {"n_estimators": 100, "max_depth": 10}, {"n_estimators": 500, "max_depth": 15}, {"n_estimators": 1000, "max_depth": 20},
-            {"n_estimators": 200, "max_depth": 12}, {"n_estimators": 300, "max_depth": null}, {"n_estimators": 1500, "max_depth": 25},
-            {"n_estimators": 1000, "max_depth": 30, "min_samples_split": 5}, {"n_estimators": 500, "max_depth": 10, "min_samples_leaf": 4}
+            {"C": 1000, "gamma": 0.1}, {"C": 10000, "gamma": 0.01}, {"C": 100000, "gamma": 1}
         ],
         "mlp": [
-            {"solver": "adam", "max_iter": 500, "alpha": 0.0001}, {"solver": "lbfgs", "max_iter": 1000, "alpha": 0.001}, {"solver": "sgd", "max_iter": 1500, "alpha": 0.01},
-            {"solver": "adam", "max_iter": 800, "alpha": 0.0005, "learning_rate": "constant"}, {"solver": "adam", "max_iter": 1000, "alpha": 0.00001, "learning_rate": "adaptive"},
-            {"solver": "lbfgs", "max_iter": 2000, "alpha": 0.01}, {"solver": "sgd", "max_iter": 2000, "alpha": 0.001, "momentum": 0.9},
-            {"solver": "adam", "max_iter": 2000, "alpha": 0.000001, "hidden_layer_sizes": [100, 50]}
+            {"solver": "adam", "max_iter": 500, "alpha": 0.0001}, {"solver": "lbfgs", "max_iter": 1000, "alpha": 0.001}, {"solver": "sgd", "max_iter": 1500, "alpha": 0.01}
+        ],
+        "knnr": [
+            {"n_neighbors": 3}, {"n_neighbors": 5}, {"n_neighbors": 10}, {"n_neighbors": 2, "weights": "distance"}
         ]
     },
 
     "dl_models": [
-        {"name": "spectralformer", "batch_size": 256, "epochs": 300, "lr": 0.001, "weight_decay": 0}
+        {"name": "spectralnet", "batch_size": 32, "epochs": 2, "lr": 0.0005, "weight_decay": 0},
+        {"name": "lstm", "batch_size": 32, "epochs": 20, "lr": 0.0005, "weight_decay": 0},
+        {"name": "cnn", "batch_size": 32, "epochs": 20, "lr": 0.0005, "weight_decay": 0},
+        {"name": "transformer", "batch_size": 32, "epochs": 20, "lr": 0.0005, "weight_decay": 0},
+        {"name": "spectralformer", "batch_size": 32, "epochs": 20, "lr": 0.00001, "weight_decay": 0},
+
+        {"name": "spectralnet", "batch_size": 32, "epochs": 100, "lr": 0.0002, "weight_decay": 0},
+        {"name": "lstm", "batch_size": 32, "epochs": 100, "lr": 0.0001, "weight_decay": 0},
+        {"name": "cnn", "batch_size": 32, "epochs": 100, "lr": 0.0003, "weight_decay": 0},
+        {"name": "transformer", "batch_size": 32, "epochs": 100, "lr": 0.0005, "weight_decay": 0},
+        {"name": "spectralformer", "batch_size": 32, "epochs": 100, "lr": 0.0001, "weight_decay": 0},
+
+        {"name": "spectralnet", "batch_size": 32, "epochs": 200, "lr": 0.0002, "weight_decay": 0},
+        {"name": "lstm", "batch_size": 32, "epochs": 200, "lr": 0.0001, "weight_decay": 0},
+        {"name": "cnn", "batch_size": 32, "epochs": 200, "lr": 0.0003, "weight_decay": 0},
+        {"name": "transformer", "batch_size": 32, "epochs": 200, "lr": 0.0005, "weight_decay": 0},
+        {"name": "spectralformer", "batch_size": 32, "epochs": 200, "lr": 0.0001, "weight_decay": 0}
     ]
 }
