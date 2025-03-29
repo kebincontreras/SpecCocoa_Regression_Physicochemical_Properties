@@ -58,15 +58,15 @@ train_file = os.path.join(base_path, "train_nir_cocoa_dataset.h5")
 test_file = os.path.join(base_path, "test_nir_cocoa_dataset.h5")
 
 # Salida con los labels normalizados
-output_train = os.path.join(base_path, "train_nir_cocoa_dataset_normalized.h5")
-output_test = os.path.join(base_path, "test_nir_cocoa_dataset_normalized.h5")
+output_train = os.path.join(base_path, "train_nir_cocoa_dataset_normalized100.h5")
+output_test = os.path.join(base_path, "test_nir_cocoa_dataset_normalized100.h5")
 
 
 # Ejecutar normalización
 normalize_labels(train_file, test_file, output_train, output_test)
 
-output_train = os.path.join(base_path, "train_vis_cocoa_dataset_normalized.h5")
-output_test = os.path.join(base_path, "test_vis_cocoa_dataset_normalized.h5")
+output_train = os.path.join(base_path, "train_vis_cocoa_dataset_normalized100.h5")
+output_test = os.path.join(base_path, "test_vis_cocoa_dataset_normalized100.h5")
 
 
 # Ejecutar normalización
