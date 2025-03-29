@@ -137,7 +137,7 @@ def train_and_evaluate(model, criterion, optimizer, train_loader, test_loader, n
     
     return metrics
 
-
+'''
 def regress(model_dict, train_loader, test_loader, model_name, modality):
     """
     Entrena y evalúa un modelo de Deep Learning.
@@ -258,6 +258,137 @@ def regress(model_dict, train_loader, test_loader, model_name, modality):
             best_json_path = json_filename
 
             print(f"🆕 Modelo mejorado guardado: {model_filename}")
+
+    return {
+        "Best Test R²": best_r2
+    }
+
+'''
+
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+import wandb
+
+def regress(model_dict, train_loader, test_loader, model_name, modality):
+    import os
+    import json
+    import numpy as np
+    import torch
+
+    model = model_dict["model"]
+    criterion = model_dict["criterion"]
+    optimizer = model_dict["optimizer"]
+    num_epochs = model_dict["epochs"]
+    batch_size = model_dict["batch_size"]
+    lr = model_dict["lr"]
+    weight_decay = model_dict["weight_decay"]
+    device = next(model.parameters()).device
+
+    output_labels = ["Cadmium", "Fermentation Level", "Moisture", "Polyphenols"]
+
+    best_r2 = -np.inf
+    best_model_path = None
+    best_json_path = None
+    best_scripted_path = None
+
+    SAVE_DIR = f"model/Deep_Learning/{modality}"
+    os.makedirs(SAVE_DIR, exist_ok=True)
+
+    if not wandb.run:
+        wandb.init(project="2_nir_cocoa_regression_Deep_Learning", name=f"{model_name}_{modality}_experiment")
+
+    for epoch in range(1, num_epochs + 1):
+        metrics = {"epoch": epoch}
+        model.train()
+        all_train_preds, all_train_labels = [], []
+
+        for X_batch, Y_batch in train_loader:
+            X_batch, Y_batch = X_batch.to(device), Y_batch.to(device)
+            optimizer.zero_grad()
+            Y_pred = model(X_batch)
+            loss = criterion(Y_pred, Y_batch)
+            loss.backward()
+            optimizer.step()
+            all_train_preds.append(Y_pred.detach().cpu().numpy())
+            all_train_labels.append(Y_batch.cpu().numpy())
+
+        Y_train_pred = np.vstack(all_train_preds)
+        Y_train_true = np.vstack(all_train_labels)
+        r2_train = r2_score(Y_train_true, Y_train_pred, multioutput='raw_values')
+
+        model.eval()
+        all_test_preds, all_test_labels = [], []
+
+        with torch.no_grad():
+            for X_batch, Y_batch in test_loader:
+                X_batch = X_batch.to(device)
+                Y_pred = model(X_batch).cpu().numpy()
+                all_test_preds.append(Y_pred)
+                all_test_labels.append(Y_batch.cpu().numpy())
+
+        Y_test_pred = np.vstack(all_test_preds)
+        Y_test_true = np.vstack(all_test_labels)
+        r2_test = r2_score(Y_test_true, Y_test_pred, multioutput='raw_values')
+        mse_test = mean_squared_error(Y_test_true, Y_test_pred, multioutput='raw_values')
+        mae_test = mean_absolute_error(Y_test_true, Y_test_pred, multioutput='raw_values')
+
+        for i, label in enumerate(output_labels):
+            metrics[f"Test/R²/{label}"] = r2_test[i]
+            metrics[f"Test/MSE/{label}"] = mse_test[i]
+            metrics[f"Test/MAE/{label}"] = mae_test[i]
+
+        wandb.log(metrics)
+        r2_mean_test = np.mean(r2_test)
+        print(f"Epoch {epoch}/{num_epochs} → R² Test promedio: {r2_mean_test:.4f}")
+
+        if r2_mean_test > best_r2:
+            if best_model_path and os.path.exists(best_model_path):
+                os.remove(best_model_path)
+            if best_json_path and os.path.exists(best_json_path):
+                os.remove(best_json_path)
+            if best_scripted_path and os.path.exists(best_scripted_path):
+                os.remove(best_scripted_path)
+
+            best_r2 = r2_mean_test
+
+            # Guardar pesos como siempre
+            model_filename = os.path.join(SAVE_DIR, f"{model_name}_{best_r2:.4f}.pth")
+            torch.save(model.state_dict(), model_filename)
+
+            # Guardar modelo completo con TorchScript
+            example_input = next(iter(test_loader))[0].to(device)
+            scripted_model = torch.jit.trace(model, example_input)
+            scripted_path = model_filename.replace(".pth", "_scripted.pt")
+            scripted_model.save(scripted_path)
+
+            # Guardar JSON con métricas
+            hyperparams = {
+                "name": model_name,
+                "batch_size": batch_size,
+                "epochs": epoch,
+                "lr": lr,
+                "weight_decay": weight_decay,
+                "test_metrics": {
+                    label: {
+                        "R2": float(r2_test[i]),
+                        "MSE": float(mse_test[i]),
+                        "MAE": float(mae_test[i])
+                    }
+                    for i, label in enumerate(output_labels)
+                },
+                "test_r2_mean": float(r2_mean_test)
+            }
+
+            json_filename = model_filename.replace(".pth", ".json")
+            with open(json_filename, "w") as f:
+                json.dump(hyperparams, f, indent=4)
+
+            best_model_path = model_filename
+            best_json_path = json_filename
+            best_scripted_path = scripted_path
+
+            print(f"🆕 Modelo mejorado guardado:")
+            print(f"    - Weights: {model_filename}")
+            print(f"    - Scripted: {scripted_path}")
 
     return {
         "Best Test R²": best_r2

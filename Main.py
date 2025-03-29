@@ -20,9 +20,9 @@ ML_HYPERPARAMS = experiments["ml_hyperparams"]
 DL_MODELS = experiments["dl_models"]
 
 # 🔹 Define modalities (VIS first, then NIR)
-MODALITIES = ["VIS"]
+#MODALITIES = ["VIS"]
 #MODALITIES = [ "NIR" ]
-#MODALITIES = ["VIS", "NIR"]
+MODALITIES = ["VIS", "NIR"]
 
 
 # 🔹 Execute ML and DL (set False if not needed)
@@ -30,7 +30,7 @@ EXECUTE_ML = False
 EXECUTE_DL = True
 
 # 🔹 W&B Project Names
-WB_PROJECT_ML = "emma_ML_Cocoa_Regressionn"
+WB_PROJECT_ML = "ML_Cocoa_Regressionn"
 WB_PROJECT_DL = "emma_DL_Cocoa_Regressionn "
 
 def run_experiments():
