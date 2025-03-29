@@ -7,6 +7,7 @@ from methods.models.config import config_lstm, config_cnn, config_TSTransformer,
 from methods.metrics_2 import compute_metric_params, overall_accuracy, average_accuracy, kappa
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import wandb  
 import torch
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
@@ -137,15 +138,16 @@ def train_and_evaluate(model, criterion, optimizer, train_loader, test_loader, n
     return metrics
 
 
-
-
 def regress(model_dict, train_loader, test_loader, model_name, modality):
     """
     Entrena y evalúa un modelo de Deep Learning.
     Guarda únicamente el mejor modelo según el R² promedio en test, incluyendo métricas en JSON.
-    Si aparece un mejor modelo, elimina el anterior.
+    También guarda MAE y MSE por propiedad.
     """
     import os
+    import json
+    import numpy as np
+    import torch
 
     model = model_dict["model"]
     criterion = model_dict["criterion"]
@@ -201,45 +203,53 @@ def regress(model_dict, train_loader, test_loader, model_name, modality):
 
         Y_test_pred = np.vstack(all_test_preds)
         Y_test_true = np.vstack(all_test_labels)
-        r2_test = r2_score(Y_test_true, Y_test_pred, multioutput='raw_values')
 
-        # 🔹 Registrar métricas
-        for label, r2_t, r2_v in zip(output_labels, r2_train, r2_test):
-            metrics[f"Train/R²/{label}"] = r2_t
-            metrics[f"Test/R²/{label}"] = r2_v
+        r2_test = r2_score(Y_test_true, Y_test_pred, multioutput='raw_values')
+        mse_test = mean_squared_error(Y_test_true, Y_test_pred, multioutput='raw_values')
+        mae_test = mean_absolute_error(Y_test_true, Y_test_pred, multioutput='raw_values')
+
+        # 🔹 Registrar métricas en wandb
+        for i, label in enumerate(output_labels):
+            metrics[f"Test/R²/{label}"] = r2_test[i]
+            metrics[f"Test/MSE/{label}"] = mse_test[i]
+            metrics[f"Test/MAE/{label}"] = mae_test[i]
 
         wandb.log(metrics)
 
-        r2_mean_train = np.mean(r2_train)
         r2_mean_test = np.mean(r2_test)
+        print(f"Epoch {epoch}/{num_epochs} → R² Test promedio: {r2_mean_test:.4f}")
 
-        print(f"Epoch {epoch}/{num_epochs}: R² Train = {r2_mean_train:.4f}, R² Test = {r2_mean_test:.4f}")
-
-        # 🔹 Guardar solo si mejora
+        # 🔹 Guardar si mejora el R²
         if r2_mean_test > best_r2:
-            # Eliminar el modelo anterior si existe
             if best_model_path and os.path.exists(best_model_path):
                 os.remove(best_model_path)
             if best_json_path and os.path.exists(best_json_path):
                 os.remove(best_json_path)
 
-            # Actualizar mejor R²
             best_r2 = r2_mean_test
 
-            # Guardar nuevo modelo
+            # Guardar modelo
             model_filename = os.path.join(SAVE_DIR, f"{model_name}_{best_r2:.4f}.pth")
             torch.save(model.state_dict(), model_filename)
 
-            # Guardar hiperparámetros y métricas
+            # Guardar JSON con todas las métricas
             hyperparams = {
                 "name": model_name,
                 "batch_size": batch_size,
                 "epochs": epoch,
                 "lr": lr,
                 "weight_decay": weight_decay,
-                "test_r2": {label: float(r2_test[i]) for i, label in enumerate(output_labels)},
+                "test_metrics": {
+                    label: {
+                        "R2": float(r2_test[i]),
+                        "MSE": float(mse_test[i]),
+                        "MAE": float(mae_test[i])
+                    }
+                    for i, label in enumerate(output_labels)
+                },
                 "test_r2_mean": float(r2_mean_test)
             }
+
             json_filename = model_filename.replace(".pth", ".json")
             with open(json_filename, "w") as f:
                 json.dump(hyperparams, f, indent=4)
