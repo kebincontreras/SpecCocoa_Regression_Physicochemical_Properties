@@ -1,3 +1,7 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TF logging
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Disable OneDNN messages
+
 import subprocess
 import json
 import os
@@ -12,7 +16,8 @@ EXPERIMENTS_FILE = "methods/resources/experiments.json"
 os.makedirs("configs", exist_ok=True)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+ 
+ 
 
 # Read experiment configurations
 with open(EXPERIMENTS_FILE, "r") as f:

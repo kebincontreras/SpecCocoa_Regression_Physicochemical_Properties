@@ -183,3 +183,45 @@ wandb/
 data/*.h5
 data/**/*.h5
 
+# Virtual Environment
+Regression_cocoa/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Environment variables
+.env
+
+# Weights & Biases
+wandb/
+
+# Model checkpoints
+*.h5
+*.pth
+checkpoints/
+
+# Logs
+*.log
+
+# Modelo folder
+model/
+
+
