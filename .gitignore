@@ -223,5 +223,9 @@ checkpoints/
 
 # Modelo folder
 model/
+models/
+
+# Raw dataset folder
+data/raw_dataset/
 
 
