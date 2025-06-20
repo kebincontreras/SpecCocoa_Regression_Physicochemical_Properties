@@ -29,7 +29,8 @@ echo.
 echo ✅ Configuracion del entorno completada!
 echo 💡 Para activar el entorno virtual en el futuro, ejecute: Regression_cocoa\Scripts\activate.bat
 echo.
-
+  
+  
 
 echo ============================================
 echo      CREACION Y NORMALIZACION DE DATASETS
@@ -75,19 +76,6 @@ echo    NORMALIZANDO DATASETS CREADOS
 echo ============================================
 echo.
 
-echo Verificando que existan los datasets originales...
-set "missing_files=0"
-if not exist "data\train_NIR_cocoa_dataset.h5" set /a missing_files+=1
-if not exist "data\train_VIS_cocoa_dataset.h5" set /a missing_files+=1
-if not exist "data\test_NIR_cocoa_dataset.h5" set /a missing_files+=1
-if not exist "data\test_VIS_cocoa_dataset.h5" set /a missing_files+=1
-
-if %missing_files% gtr 0 (
-    echo ⚠️ Faltan algunos datasets originales. Verificar errores.
-) else (
-    echo ✅ Todos los datasets originales fueron creados correctamente.
-)
-
 echo.
 echo Ejecutando normalizacion de datasets...
 python data\data_normalization\data_normalize.py --auto
@@ -99,13 +87,6 @@ if not exist "data\train_NIR_cocoa_dataset_normalized.h5" set /a normalized_miss
 if not exist "data\train_VIS_cocoa_dataset_normalized.h5" set /a normalized_missing+=1
 if not exist "data\test_NIR_cocoa_dataset_normalized.h5" set /a normalized_missing+=1
 if not exist "data\test_VIS_cocoa_dataset_normalized.h5" set /a normalized_missing+=1
-
-if %normalized_missing% gtr 0 (
-    echo ⚠️ Algunos datasets normalizados no se generaron correctamente.
-    echo    Ejecute manualmente: python data\normalize_datasets.py --auto
-) else (
-    echo ✅ Todos los datasets fueron normalizados correctamente.
-)
 
 echo.
 echo ============================================
