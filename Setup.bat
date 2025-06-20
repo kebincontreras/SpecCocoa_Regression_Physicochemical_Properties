@@ -13,13 +13,14 @@ if not exist "Regression_cocoa\Scripts\activate.bat" (
 )
 
 
+
 REM Activar entorno virtual
 echo Activando entorno virtual...
 call Regression_cocoa\Scripts\activate.bat
 
 REM Verificar que entorno está activo
 echo Entorno virtual activo: %VIRTUAL_ENV%
-python -c "import sys; print('✅ Ejecutando con Python en:', sys.executable)"
+python -c "import sys; print(' Ejecutando con Python en:', sys.executable)"
 echo.
 
 REM Instalar dependencias
