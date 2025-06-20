@@ -102,7 +102,7 @@ if not exist "data\test_VIS_cocoa_dataset_normalized.h5" set /a normalized_missi
 
 if %normalized_missing% gtr 0 (
     echo ⚠️ Algunos datasets normalizados no se generaron correctamente.
-    echo    Ejecute manualmente: python data\data_normalization\data_normalize.py --auto
+    echo    Ejecute manualmente: python data\normalize_datasets.py --auto
 ) else (
     echo ✅ Todos los datasets fueron normalizados correctamente.
 )
@@ -126,24 +126,17 @@ echo         PROCESO COMPLETADO
 echo ============================================
 echo.
 
-REM Verificar archivos creados
-echo 📁 Verificando archivos creados...
-if exist "data\train_NIR_cocoa_dataset.h5" (
-    echo ✅ train_NIR_cocoa_dataset.h5
-) else (
-    echo ❌ train_NIR_cocoa_dataset.h5 no encontrado
-)
+python data\Train.py --auto
 
-if exist "data\train_VIS_cocoa_dataset.h5" (
-    echo ✅ train_VIS_cocoa_dataset.h5
-) else (
-    echo ❌ train_VIS_cocoa_dataset.h5 no encontrado
-)
+echo ============================================
+echo        ENTRENAMIENTO COMPLETADO
+echo ============================================
+echo.
 
-echo.
-echo 🎉 Todos los datasets han sido procesados!
-echo.
-echo 📂 Archivos disponibles en la carpeta data/:
-echo    • Datasets originales: train_*_cocoa_dataset.h5, test_*_cocoa_dataset.h5
-echo    • Datasets normalizados: *_normalized.h5
+python data\Train.py --auto
+
+
+echo ============================================
+echo        TEST COMPLETADO
+echo ============================================
 echo.
