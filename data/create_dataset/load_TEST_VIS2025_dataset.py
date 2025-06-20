@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 num_samples = 16
 
 np.random.seed(0)
-with h5py.File('TEST_train_vis_cocoa_dataset.h5', 'r') as f:
+with h5py.File('../TEST_train_vis_cocoa_dataset.h5', 'r') as f:
     sample_indices = sorted(np.random.randint(0, len(f['spec']), num_samples))
     x_train = f['spec'][sample_indices, :]
     ferm_train = f['fermentation_level'][sample_indices, :]

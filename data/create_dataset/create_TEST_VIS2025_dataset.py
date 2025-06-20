@@ -10,6 +10,10 @@ from scipy.io import loadmat
 
 from sklearn.decomposition import PCA
 
+# Configurar matplotlib para cerrar figuras automáticamente
+plt.ion()
+plt.rcParams['figure.max_open_warning'] = 0
+
 
 # functions
 
@@ -27,11 +31,9 @@ def compute_sam(a, b):
 # =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 # Dataset parameters
 # =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
-
-
-base_dir = "/home/enmartz/Jobs/cacao/Base_Datos_Cacao/Oficial_Cacao"
-out_dir = os.path.join("built_datasets")
-os.makedirs(out_dir, exist_ok=True)
+base_dir = "data/raw_dataset"
+output_dir = "data"
+os.makedirs(output_dir, exist_ok=True)
 wavelenghts_path = '18_01_2025/Optical_lab_spectral/VIS'
 
 # set variables
@@ -148,7 +150,7 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
     label_dataset = []
     cocoa_bean_batch_mean_dataset = []
     label_batch_mean_dataset = []
-    with h5py.File(f'TEST_{subset_name}_vis_cocoa_dataset.h5', 'w') as d:
+    with h5py.File(os.path.join(output_dir, f'TEST_{subset_name}_vis_cocoa_dataset.h5'), 'w') as d:
         dataset = d.create_dataset('spec', shape=(0, len(wavelengths)), maxshape=(None, len(wavelengths)),
                                    chunks=(256, len(wavelengths)), dtype=np.float32)
         fermset = d.create_dataset('fermentation_level', (0, 1), maxshape=(None, 1), chunks=(256, 1), dtype=np.uint8)
@@ -335,10 +337,11 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         plt.xlabel('Wavelength [nm]')
         plt.ylabel('Reflectance')
         plt.title('Mean and std of Cocoa dataset by class')
-
         plt.grid()
         plt.tight_layout()
         plt.show()
+        plt.pause(2)
+        plt.close()
 
     # compute PCA with X_mean using sklearn
 
@@ -351,7 +354,7 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
     full_cocoa_bean_dataset = scaler.fit_transform(full_cocoa_bean_dataset)
 
     # Load the PCA model
-    pca = joblib.load(f'pca_vis_{pca_name}.pkl')
+    pca = joblib.load(os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
     X_pca = pca.transform(full_cocoa_bean_dataset)
 
     if debug_pca:
@@ -366,6 +369,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         plt.legend()
         plt.tight_layout()
         plt.show()
+        plt.pause(2)
+        plt.close()
 
     # plot cocoa bean batch mean dataset
 
@@ -381,34 +386,39 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
     plt.xlabel('Wavelength [nm]')
     plt.ylabel('Reflectance')
     plt.title('Mean of Cocoa dataset Batch Mean by class')
-
     plt.grid()
     plt.tight_layout()
     plt.show()
+    plt.pause(2)
+    plt.close()
 
     # compute PCA with X_mean using sklearn
 
-    full_cocoa_bean_batch_mean_dataset = np.concatenate(cocoa_bean_batch_mean_dataset, axis=0)
-    full_label_batch_mean_dataset = np.concatenate(label_batch_mean_dataset, axis=0)
+    # full_cocoa_bean_batch_mean_dataset = np.concatenate(cocoa_bean_batch_mean_dataset, axis=0)
+    # full_label_batch_mean_dataset = np.concatenate(label_batch_mean_dataset, axis=0)
 
-    from sklearn.preprocessing import StandardScaler
+    # from sklearn.preprocessing import StandardScaler
 
-    scaler = StandardScaler()
-    full_cocoa_bean_batch_mean_dataset = scaler.fit_transform(full_cocoa_bean_batch_mean_dataset)
+    # scaler = StandardScaler()
+    # full_cocoa_bean_batch_mean_dataset = scaler.fit_transform(full_cocoa_bean_batch_mean_dataset)
 
-    # Load the PCA model
-    pca = joblib.load(f'pca_mean_vis_{pca_name}.pkl')
-    X_pca = pca.transform(full_cocoa_bean_batch_mean_dataset)
+    # # Load the PCA model
+    # pca = joblib.load(os.path.join(output_dir, f'pca_mean_vis_{pca_name}.pkl'))
+    # X_pca = pca.transform(full_cocoa_bean_batch_mean_dataset)
 
-    if debug_pca:
-        plt.figure(figsize=(6, 5))
-        for i in range(len(cocoa_bean_dataset)):
-            X_class = X_pca[full_label_batch_mean_dataset.squeeze() == i]
-            plt.scatter(X_class[:, 0], X_class[:, 1], color=colors[i], alpha=0.5, marker=markers[i],
-                        label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
+    # if debug_pca:
+    #     plt.figure(figsize=(6, 5))
+    #     for i in range(len(cocoa_bean_dataset)):
+    #         X_class = X_pca[full_label_batch_mean_dataset.squeeze() == i]
+    #         plt.scatter(X_class[:, 0], X_class[:, 1], color=colors[i], alpha=0.5, marker=markers[i],
+    #                     label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
 
-        plt.title(f'Cocoa dataset PCA')
-        plt.grid()
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
+    #     plt.title(f'Cocoa dataset PCA')
+    #     plt.grid()
+    #     plt.legend()
+    #     plt.tight_layout()
+    #     plt.show()
+    #     plt.pause(2)
+    #     plt.close()
+    #     plt.show()
+    #     plt.show()
