@@ -1,5 +1,7 @@
 # SpecCocoa Regression - Physicochemical Properties
 
+---
+
 A regression analysis project to predict the physicochemical properties of cocoa using NIR and VIS spectroscopy.
 
 ## 📋 Description
@@ -11,32 +13,61 @@ This project uses machine learning and deep learning techniques to predict physi
 - **Cadmium** 
 - **Polyphenols** 
 
-## 🚀 Quick Installation and Execution
+---
 
-### ✅ Recommended: Install and run with a single command
+## 🚀 Quick Start
+
+Follow these steps to get started with this repository:
+
+### 1. 🔧 Install the Environment
 
 ```bash
-setup.bat
+conda create -n Regression_cocoa python=3.10 -y
+conda run -n Regression_cocoa pip install -r requirements.txt
 ```
 
+You must wait until the environment is fully set up. This may take a few minutes depending on your internet speed and system performance. Finally, you must activate the environment:
 
-This script automatically performs:
+```bash
+conda activate Regression_cocoa
+```
 
-- 🔧 Virtual environment creation
-- 📦 Dependency installation (from `requirements.txt`)
-- ⬇️ Dataset download and extraction from HuggingFace
-- 🏗️ Dataset creation (train/test for VIS and NIR)
-- 📊 Automatic normalization of all datasets
-- 🧠 Model training and testing
+### 2. ⬇️ Build the Datasets
 
-## 📦 Dependencies
+This step involves downloading the base dataset, generating specific training/test sets, and applying normalization. You can run only the parts you need.
 
-Automatically installed by `setup.bat`:
+#### 📥 Step 2.1 – Download the Base Dataset
 
-- Python ≥ 3.8
-- numpy, pandas, matplotlib, seaborn, scikit-learn
-- h5py, tables, openpyxl, xlrd, tqdm, rarfile
-- Requires `UnRAR.exe` at `C:\Program Files\WinRAR`
+```bash
+python data/create_dataset/download_cocoa_dataset.py
+```
+This script downloads and extracts the raw dataset into `data/raw_dataset`.
+
+#### 🏗️ Step 2.2 – Generate Training and Testing Datasets
+
+```bash
+python data/create_dataset/create_NIR2025_dataset.py
+python data/create_dataset/create_VIS2025_dataset.py
+```
+These scripts generate the training and testing datasets for the NIR and VIS spectrums.
+
+#### 📊 Step 2.3 – Normalize the Datasets (Required)
+
+```bash
+python data/create_dataset/normalize_datasets.py
+```
+This script automatically normalizes all datasets that were generated in the previous steps.
+
+💡 **Tip:** You don’t need to run every script, just the ones relevant to your experiment. However, the base dataset download is required for any further processing.
+
+
+### 3. Train the Model
+
+```bash
+python train.py
+```
+
+---
 
 ## 📁 Project Structure
 
@@ -99,10 +130,9 @@ The resulting files are stored in `.h5` format with GZIP compression.
 
 ## 🧠 Model Training and Evaluation
 
-The `setup.bat` script also runs model training and evaluation (based on `Train.py`).
-
 Generated models are automatically saved based on type and modality under:
 
+```
 ├── model/
 │   ├── Deep_Learning/
 │   │   ├── NIR/ → SpectralNet models trained on NIR
@@ -110,6 +140,7 @@ Generated models are automatically saved based on type and modality under:
 │   └── Machine_Learning/
 │       ├── NIR/ → SVR, KNN models trained on NIR
 │       └── VIS/ → SVR, KNN models trained on VIS
+```
 
 Models include `.pth` (DL), `.pkl` (ML), and `.json` metric files.
 

@@ -1,29 +1,12 @@
-from torch.utils.tensorboard import SummaryWriter
-import numpy as np
-from methods.dl.models import ClassifierNet, SpectralNet, TSTransformerEncoder, Lstm, CNN, SpectralFormer
-from methods.dl.models.config import config_spectralnet, config_TSTransformer, config_lstm, config_cnn, config_spectralformer
-from methods.models.config import config_lstm, config_cnn, config_TSTransformer, config_spectralnet, config_spectralformer
-#from methods.metrics_2 import compute_metric_params, overall_accuracy, average_accuracy, kappa
-#from metrics_2 import compute_metric_params, overall_accuracy, average_accuracy, kappa
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
-import wandb  
-import torch
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-from tabulate import tabulate  
-import torch.nn as nn
-import torch.optim as optim
-import os
-import json
+from methods.dl.models import SpectralNet, TSTransformerEncoder, Lstm, CNN, SpectralFormer
+from methods.models.config import config_lstm, config_cnn, config_TSTransformer, config_spectralnet, \
+    config_spectralformer
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import wandb
 import os
 import json
 import numpy as np
 import torch
-
-
 
 BACKBONES = dict(
     spectralnet=[SpectralNet, config_spectralnet],
@@ -33,11 +16,13 @@ BACKBONES = dict(
     spectralformer=[SpectralFormer, config_spectralformer]
 )
 
+
 def round_to_significant(x, sig=3):
     """ Redondea un número a tres cifras significativas """
     if x == 0:
         return 0
     return round(x, sig - int(np.floor(np.log10(abs(x)))) - 1)
+
 
 def build_regressor(model_name, hyperparameters, num_bands, num_outputs, device):
     if hyperparameters is None:
@@ -81,25 +66,21 @@ def build_regressor(model_name, hyperparameters, num_bands, num_outputs, device)
     }
 
 
-
-
 def train_and_evaluate(model, criterion, optimizer, train_loader, test_loader, num_epochs, device):
     model.train()
     output_labels = ["Cadmium", "Fermentation Level", "Moisture", "Polyphenols"]
 
     print(f"🔹 Modelo en: {next(model.parameters()).device}")  # Debe imprimir 'cuda:0'
-    
+
     for epoch in range(1, num_epochs + 1):
         metrics = {"epoch": epoch}
         mse_train, mse_test = [], []
         r2_train, r2_test = [], []
         mae_train, mae_test = [], []
-        
 
         # Entrenamiento
         model.train()
         for X_batch, Y_batch in train_loader:
-
             X_batch, Y_batch = X_batch.to(device), Y_batch.to(device)
             print(f"X_batch en: {X_batch.device}, Y_batch en: {Y_batch.device}")  # Debería imprimir 'cuda:0'
 
@@ -140,16 +121,11 @@ def train_and_evaluate(model, criterion, optimizer, train_loader, test_loader, n
 
         wandb.log(metrics)
         print(f"Epoch {epoch}: R² Train = {np.mean(r2_train)}, R² Test = {np.mean(r2_test)}")
-    
+
     return metrics
 
 
-
-
-
 def regress(model_dict, train_loader, test_loader, model_name, modality):
-
-
     model = model_dict["model"]
     criterion = model_dict["criterion"]
     optimizer = model_dict["optimizer"]
@@ -235,9 +211,11 @@ def regress(model_dict, train_loader, test_loader, model_name, modality):
 
             # Validación para evitar trazado incorrecto con dimensiones de otra modalidad
             if modality == "VIS" and example_input.shape[1] != 1037:
-                raise ValueError(f"❌ El modelo VIS está recibiendo una entrada de {example_input.shape[1]} bandas (esperado: 1037)")
+                raise ValueError(
+                    f"❌ El modelo VIS está recibiendo una entrada de {example_input.shape[1]} bandas (esperado: 1037)")
             elif modality == "NIR" and example_input.shape[1] != 284:
-                raise ValueError(f"❌ El modelo NIR está recibiendo una entrada de {example_input.shape[1]} bandas (esperado: 284)")
+                raise ValueError(
+                    f"❌ El modelo NIR está recibiendo una entrada de {example_input.shape[1]} bandas (esperado: 284)")
 
             # print(f"📏 TorchScript input shape para {modality}: {example_input.shape}")
 
@@ -245,7 +223,6 @@ def regress(model_dict, train_loader, test_loader, model_name, modality):
             scripted_path = model_filename.replace(".pth", "_scripted.pt")
             scripted_model.save(scripted_path)
 
-            
             # Guardar JSON con métricas
             hyperparams = {
                 "name": model_name,
@@ -279,5 +256,3 @@ def regress(model_dict, train_loader, test_loader, model_name, modality):
     return {
         "Best Test R²": best_r2
     }
-
-

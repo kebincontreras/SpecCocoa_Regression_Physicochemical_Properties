@@ -1,16 +1,7 @@
-from sklearn.metrics import confusion_matrix
-from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from torch.utils.tensorboard import SummaryWriter
-#from methods.metrics_2 import compute_metric_params, overall_accuracy, average_accuracy, kappa
-#from metrics_2 import compute_metric_params, overall_accuracy, average_accuracy, kappa
 from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neural_network import MLPRegressor
 from sklearn.neighbors import KNeighborsRegressor
-from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 import os

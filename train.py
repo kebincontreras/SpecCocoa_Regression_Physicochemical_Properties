@@ -1,12 +1,8 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TF logging
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Disable OneDNN messages
-#.\create_datasets.bat    .\setup_completo   .\setup_environment.bat
+
 import subprocess
-import json
-import os
-import torch
-from methods.ml.machine_learning_wb import *
 from methods.dl.deep_learning_wb import *
 
 # Path to the experiments JSON file in resources/
@@ -27,8 +23,6 @@ ML_HYPERPARAMS = experiments["ml_hyperparams"]
 DL_MODELS = experiments["dl_models"]
 
 # Modalities to run
-#MODALITIES = ["VIS"]
-# MODALITIES = ["NIR"]
 MODALITIES = ["VIS", "NIR"]
 
 # Flags to execute ML and DL
@@ -38,7 +32,7 @@ EXECUTE_DL = True
 
 # WandB project names
 WB_PROJECT_ML = "ML_Cocoa_Regressionn"
-WB_PROJECT_DL = "4kebin_DL_Cocoa_Regressionn"
+WB_PROJECT_DL = "DL_Cocoa_Regressionn"
 
 def run_experiments():
     print("\n===== EXPERIMENT CONFIGURATION =====")

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script para normalizar todos los datasets de cacao
-Crea versiones normalizadas de todos los archivos .h5 en la carpeta data/
+Script to normalize all cocoa datasets.
+Creates normalized versions of all .h5 files in the data/ folder.
 """
 
 import h5py
 import numpy as np
 from pathlib import Path
 
-# Factores de normalización para las etiquetas
+DATA_DIR = Path("data/raw_dataset")
+
+# Normalization factors for the labels
 NORM_FACTORS = {
     'fermentation_level': 100,
     'moisture': 10,
@@ -18,7 +20,7 @@ NORM_FACTORS = {
 }
 
 def normalize_labels(input_file, output_file):
-    print(f"🔄 Procesando: {input_file.name}")
+    print(f"🔄 Processing: {input_file.name}")
     try:
         with h5py.File(input_file, 'r') as h5_in:
             spectra = h5_in['spec'][:]
@@ -39,27 +41,26 @@ def normalize_labels(input_file, output_file):
             h5_out.create_dataset('cadmium', data=cadmium_norm, compression='gzip', compression_opts=9)
             h5_out.create_dataset('polyphenols', data=polyphenols_norm, compression='gzip', compression_opts=9)
 
-        print(f"✅ Guardado: {output_file.name}")
-        print(f"   📊 Fermentación: {fermentation_norm.min():.3f} - {fermentation_norm.max():.3f}")
-        print(f"   📊 Humedad: {moisture_norm.min():.3f} - {moisture_norm.max():.3f}")
-        print(f"   📊 Cadmio: {cadmium_norm.min():.3f} - {cadmium_norm.max():.3f}")
-        print(f"   📊 Polifenoles: {polyphenols_norm.min():.3f} - {polyphenols_norm.max():.3f}")
+        print(f"✅ Saved: {output_file.name}")
+        print(f"   📊 Fermentation: {fermentation_norm.min():.3f} - {fermentation_norm.max():.3f}")
+        print(f"   📊 Moisture: {moisture_norm.min():.3f} - {moisture_norm.max():.3f}")
+        print(f"   📊 Cadmium: {cadmium_norm.min():.3f} - {cadmium_norm.max():.3f}")
+        print(f"   📊 Polyphenols: {polyphenols_norm.min():.3f} - {polyphenols_norm.max():.3f}")
 
     except Exception as e:
-        print(f"❌ Error en {input_file.name}: {str(e)}")
+        print(f"❌ Error in {input_file.name}: {str(e)}")
 
 def normalize_all_datasets():
-    data_dir = Path(__file__).parent / "data"
-    patterns = ["train_*_cocoa_dataset.h5", "test_*_cocoa_dataset.h5", "TEST_*_cocoa_dataset.h5"]
+    patterns = ["train_*_cocoa_dataset.h5", "test_*_cocoa_dataset.h5"]
 
-    print("🚀 Iniciando normalización de datasets de cacao")
-    print(f"📁 Carpeta: {data_dir.resolve()}")
+    print("🚀 Starting cocoa dataset normalization")
+    print(f"📁 Folder: {DATA_DIR.resolve()}")
     print("=" * 60)
 
     total = 0
     for pattern in patterns:
-        files = list(data_dir.glob(pattern))
-        print(f"🔍 Patrón '{pattern}': {len(files)} archivos")
+        files = list(DATA_DIR.glob(pattern))
+        print(f"🔍 Pattern '{pattern}': {len(files)} files")
 
         for input_file in files:
             if "_normalized" in input_file.name:
@@ -68,7 +69,7 @@ def normalize_all_datasets():
             output_file = input_file.with_name(input_file.stem + "_normalized.h5")
 
             if output_file.exists():
-                print(f"⏭️ Ya existe: {output_file.name} → omitiendo.")
+                print(f"⏭️ Already exists: {output_file.name} → skipping.")
                 continue
 
             normalize_labels(input_file, output_file)
@@ -76,17 +77,17 @@ def normalize_all_datasets():
             print()
 
     print("=" * 60)
-    print(f"🎉 Total archivos procesados: {total}")
+    print(f"🎉 Total files processed: {total}")
 
-    normalized_files = sorted(data_dir.glob("*_normalized.h5"))
+    normalized_files = sorted(DATA_DIR.glob("*_normalized.h5"))
     if normalized_files:
-        print("\n📋 Archivos generados:")
+        print("\n📋 Generated files:")
         for file in normalized_files:
             print(f"   ✓ {file.name}")
     else:
-        print("\n⚠️ No se generaron archivos normalizados.")
+        print("\n⚠️ No normalized files were generated.")
 
 if __name__ == "__main__":
-    print("🧪 NORMALIZADOR DE DATASETS DE CACAO")
+    print("🧪 COCOA DATASET NORMALIZER")
     print("=" * 60)
     normalize_all_datasets()
