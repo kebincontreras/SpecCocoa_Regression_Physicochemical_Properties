@@ -56,7 +56,7 @@ def compute_msc(spectra):
 # Dataset parameters
 # =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
-base_dir = "data/raw_dataset"
+base_dir = "data/raw_dataset/Spectral_signatures_of_cocoa_beans"
 output_dir = "data"
 os.makedirs(output_dir, exist_ok=True)
 

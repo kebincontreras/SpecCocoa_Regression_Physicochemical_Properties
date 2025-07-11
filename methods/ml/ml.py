@@ -54,25 +54,25 @@ def regress(model, train_dataset, test_dataset, modality, save_name=None):
     X_train, Y_train = train_dataset["X"], train_dataset["Y"]
     X_test, Y_test = test_dataset["X"], test_dataset["Y"]
 
-    print(f"\n🔹 Entrenando modelo {type(model).__name__} en {modality}...")
-    model.fit(X_train, Y_train)  # Entrenar el modelo
+    print(f"\nTraining model {type(model).__name__} on {modality}...")
+    model.fit(X_train, Y_train)  # Train the model
 
-    # 🔹 Predicción en TRAIN
+    # Prediction on TRAIN
     Y_train_pred = model.predict(X_train)
     mse_train = mean_squared_error(Y_train, Y_train_pred, multioutput='raw_values').tolist()
     r2_train = r2_score(Y_train, Y_train_pred, multioutput='raw_values').tolist()
     mae_train = mean_absolute_error(Y_train, Y_train_pred, multioutput='raw_values').tolist()
 
-    # 🔹 Predicción en TEST
+    # Prediction on TEST
     Y_test_pred = model.predict(X_test)
     mse_test = mean_squared_error(Y_test, Y_test_pred, multioutput='raw_values').tolist()
     r2_test = r2_score(Y_test, Y_test_pred, multioutput='raw_values').tolist()
     mae_test = mean_absolute_error(Y_test, Y_test_pred, multioutput='raw_values').tolist()
 
-    # Identificar cada variable de salida
+    # Identify each output variable
     output_labels = ["Cadmium", "Fermentation Level", "Moisture", "Polyphenols"]
 
-    # Diccionarios de métricas para TRAIN y TEST
+    # Metrics dictionaries for TRAIN and TEST
     metrics = {
         "train": {
             "mse": {label: mse for label, mse in zip(output_labels, mse_train)},
@@ -86,12 +86,12 @@ def regress(model, train_dataset, test_dataset, modality, save_name=None):
         }
     }
 
-    # 🔹 Mostrar en consola el R² promedio
+    # Show average R² in console
     r2_mean_train = np.mean(r2_train)
     r2_mean_test = np.mean(r2_test)
-    print(f"📊 R² Train = {r2_mean_train:.4f}, R² Test = {r2_mean_test:.4f}")
+    print(f"R² Train = {r2_mean_train:.4f}, R² Test = {r2_mean_test:.4f}")
 
-    # 🔹 Guardar el modelo y las métricas después del entrenamiento
+    # Save the model and metrics after training
     if save_name:
         SAVE_DIR = f"model/Machine_Learning/{modality}/"
         os.makedirs(SAVE_DIR, exist_ok=True)
@@ -100,12 +100,12 @@ def regress(model, train_dataset, test_dataset, modality, save_name=None):
 
         with open(model_filename, "wb") as f:
             pickle.dump(model, f)
-        print(f"✅ Modelo guardado en: {model_filename}")
+        print(f"Model saved at: {model_filename}")
 
-        # Guardar las métricas en un archivo JSON
+        # Save the metrics to a JSON file
         with open(metrics_filename, "w") as f:
             json.dump(metrics, f, indent=4)
-        print(f"✅ Métricas guardadas en: {metrics_filename}")
+        print(f"Metrics saved at: {metrics_filename}")
 
     return train_dataset, test_dataset, metrics
 

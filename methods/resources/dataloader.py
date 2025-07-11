@@ -60,11 +60,11 @@ def normalize_data_by_row(data):
     for i in range(data.shape[0]):
         row = data[i, :]
 
-        # Encontrar el valor máximo en la fila
+        # Find the maximum value in the row
         max_value = np.max(row)
 
-        # Normalizar la fila
-        if max_value > 0:  # Prevenir división por cero
+        # Normalize the row
+        if max_value > 0:  # Prevent division by zero
             normalized_data[i, :] = row / max_value
 
     return normalized_data
@@ -76,7 +76,7 @@ def normalize_data_min_max_by_row(data):
     for i in range(data.shape[0]):
         row = data[i, :]
 
-        # Encontrar el valor mínimo y máximo en la fila
+        # Find the minimum and maximum value in the row
         min_value = np.min(row)
         max_value = np.max(row)
 
@@ -84,7 +84,7 @@ def normalize_data_min_max_by_row(data):
         range_value = max_value - min_value
 
         # Normalizar la fila
-        if range_value > 0:  # Prevenir división por cero
+        if range_value > 0:  # Prevent division by zero
             normalized_data[i, :] = (row - min_value) / range_value
 
     return normalized_data
@@ -92,39 +92,38 @@ def normalize_data_min_max_by_row(data):
 
 def prepare_data(dataset_name, modality, dl=False, dataset_params=None):
     """
-    Carga los datos en función de la modalidad seleccionada (NIR o VIS)
+    Load data based on the selected modality (NIR or VIS)
     """
     if modality == "NIR":
-        train_file = "data/raw_dataset/train_nir_cocoa_dataset_normalized.h5"
-        test_file = "data/raw_dataset/test_nir_cocoa_dataset_normalized.h5"
+        train_file = "data/train_nir_cocoa_dataset_normalized.h5"
+        test_file = "data/test_nir_cocoa_dataset_normalized.h5"
         save_dir = "model/Deep_Learning/NIR"
 
     elif modality == "VIS":
-        train_file = "data/raw_dataset/train_vis_cocoa_dataset_normalized.h5"
-        test_file = "data/raw_dataset/test_vis_cocoa_dataset_normalized.h5"
+        train_file = "data/train_vis_cocoa_dataset_normalized.h5"
+        test_file = "data/test_vis_cocoa_dataset_normalized.h5"
         save_dir = "model/Deep_Learning/VIS"
 
     else:
-        raise ValueError("Modalidad no válida. Usa 'NIR' o 'VIS'")
+        raise ValueError("Invalid modality. Use 'NIR' or 'VIS'")
 
-    # Verificar que los archivos existen
+    # Verify that files exist
     if not os.path.exists(train_file):
-        raise FileNotFoundError(f"Archivo no encontrado: {train_file}")
+        raise FileNotFoundError(f"File not found: {train_file}")
     if not os.path.exists(test_file):
-        raise FileNotFoundError(f"Archivo no encontrado: {test_file}")
+        raise FileNotFoundError(f"File not found: {test_file}")
 
-    # Cargar dataset de entrenamiento
+    # Load training dataset
     with h5py.File(train_file, 'r') as f:
         X_train = f['spec'][:]
         Y_train = np.column_stack((f['cadmium'][:], f['fermentation_level'][:], f['moisture'][:], f['polyphenols'][:]))
 
-    # Cargar dataset de prueba
+    # Load test dataset
     with h5py.File(test_file, 'r') as f:
         X_test = f['spec'][:]
         Y_test = np.column_stack((f['cadmium'][:], f['fermentation_level'][:], f['moisture'][:], f['polyphenols'][:]))
 
-    # print(f"📊 Datos cargados para modalidad: {modality} → X_train.shape: {X_train.shape}, X_test.shape: {X_test.shape}")
-    # Normalizar datos
+    # Normalize data
     # X_train, X_test = standardize_data(X_train, X_test)
     # X_train, X_test = normalize_data(X_train, X_test)
     # X_train, X_test = normalize_minmax(X_train, X_test)
@@ -132,7 +131,7 @@ def prepare_data(dataset_name, modality, dl=False, dataset_params=None):
     num_bands = X_train.shape[-1]
     num_outputs = Y_train.shape[-1]
 
-    os.makedirs(save_dir, exist_ok=True)  # Crear directorio de guardado si no existe
+    os.makedirs(save_dir, exist_ok=True)  # Create save directory if it doesn't exist
 
     if dl:
         X_train = torch.from_numpy(X_train).float()
@@ -143,10 +142,12 @@ def prepare_data(dataset_name, modality, dl=False, dataset_params=None):
         Y_test = torch.from_numpy(Y_test).float()
         test_dataset = TensorDataset(X_test, Y_test)
 
+        # Use pin_memory only if CUDA is available
+        use_pin_memory = torch.cuda.is_available()
         train_loader = DataLoader(train_dataset, batch_size=dataset_params["batch_size"], shuffle=True,
-                                  num_workers=dataset_params["num_workers"], pin_memory=True)
+                                  num_workers=dataset_params["num_workers"], pin_memory=use_pin_memory)
         test_loader = DataLoader(test_dataset, batch_size=dataset_params["batch_size"], shuffle=False,
-                                 num_workers=dataset_params["num_workers"], pin_memory=True)
+                                 num_workers=dataset_params["num_workers"], pin_memory=use_pin_memory)
 
         return train_loader, test_loader, num_bands, num_outputs, save_dir
     else:
@@ -172,7 +173,7 @@ def normalize_minmax(X_train, X_test):
     X_max = np.max(X_train, axis=1, keepdims=True)
 
     X_train_normalized = (X_train - X_min) / (
-                X_max - X_min + 1e-8)  # Se suma un pequeño valor para evitar divisiones por 0
+                X_max - X_min + 1e-8)  # A small value is added to avoid divisions by 0
 
     X_min_test = np.min(X_test, axis=1, keepdims=True)
     X_max_test = np.max(X_test, axis=1, keepdims=True)

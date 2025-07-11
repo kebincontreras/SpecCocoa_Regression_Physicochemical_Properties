@@ -185,6 +185,7 @@ data/**/*.h5
 
 # Virtual Environment
 Regression_cocoa/
+Regressio_cocoa_venv/
 venv/
 env/
 

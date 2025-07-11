@@ -18,7 +18,7 @@ BACKBONES = dict(
 
 
 def round_to_significant(x, sig=3):
-    """ Redondea un número a tres cifras significativas """
+    """ Rounds a number to three significant figures """
     if x == 0:
         return 0
     return round(x, sig - int(np.floor(np.log10(abs(x)))) - 1)
@@ -26,7 +26,7 @@ def round_to_significant(x, sig=3):
 
 def build_regressor(model_name, hyperparameters, num_bands, num_outputs, device):
     if hyperparameters is None:
-        raise ValueError("❌ Error: Los hiperparámetros no fueron proporcionados a build_regressor().")
+        raise ValueError("Error: Hyperparameters were not provided to build_regressor().")
 
     batch_size = hyperparameters.get("batch_size", 64)
     epochs = hyperparameters.get("epochs", 50)
@@ -38,17 +38,17 @@ def build_regressor(model_name, hyperparameters, num_bands, num_outputs, device)
         model_class, base_config = BACKBONES[model_name]
         config_dict = base_config.copy()
 
-        # ✅ Mapeo simple y uniforme
+        # Simple and uniform mapping
         config_dict["input_dim"] = num_bands
         config_dict["num_classes"] = num_outputs
 
-        # Algunas arquitecturas usan feat_dim explícitamente
+        # Some architectures use feat_dim explicitly
         if "feat_dim" in model_class.__init__.__code__.co_varnames:
             config_dict.setdefault("feat_dim", 1)
 
         model = model_class(**config_dict)
     else:
-        raise ValueError(f"❌ Modelo '{model_name}' no está definido en BACKBONES.")
+        raise ValueError(f"Model '{model_name}' is not defined in BACKBONES.")
 
     model.to(device)
 
@@ -70,7 +70,7 @@ def train_and_evaluate(model, criterion, optimizer, train_loader, test_loader, n
     model.train()
     output_labels = ["Cadmium", "Fermentation Level", "Moisture", "Polyphenols"]
 
-    print(f"🔹 Modelo en: {next(model.parameters()).device}")  # Debe imprimir 'cuda:0'
+    print(f"Model on: {next(model.parameters()).device}")
 
     for epoch in range(1, num_epochs + 1):
         metrics = {"epoch": epoch}
@@ -78,11 +78,11 @@ def train_and_evaluate(model, criterion, optimizer, train_loader, test_loader, n
         r2_train, r2_test = [], []
         mae_train, mae_test = [], []
 
-        # Entrenamiento
+        # Training
         model.train()
         for X_batch, Y_batch in train_loader:
             X_batch, Y_batch = X_batch.to(device), Y_batch.to(device)
-            print(f"X_batch en: {X_batch.device}, Y_batch en: {Y_batch.device}")  # Debería imprimir 'cuda:0'
+            print(f"X_batch on: {X_batch.device}, Y_batch on: {Y_batch.device}")
 
             X_batch, Y_batch = X_batch.to(device), Y_batch.to(device)
             optimizer.zero_grad()
@@ -91,7 +91,7 @@ def train_and_evaluate(model, criterion, optimizer, train_loader, test_loader, n
             loss.backward()
             optimizer.step()
 
-        # Evaluación en cada época
+        # Evaluation on each epoch
         for dataset_name, loader in [("Train", train_loader), ("Test", test_loader)]:
             model.eval()
             all_preds, all_labels = [], []
@@ -190,7 +190,7 @@ def regress(model_dict, train_loader, test_loader, model_name, modality):
 
         wandb.log(metrics)
         r2_mean_test = np.mean(r2_test)
-        print(f"Epoch {epoch}/{num_epochs} → R² Test promedio: {r2_mean_test:.4f}")
+        print(f"Epoch {epoch}/{num_epochs} → Average Test R²: {r2_mean_test:.4f}")
 
         if r2_mean_test > best_r2:
             if best_model_path and os.path.exists(best_model_path):
@@ -202,20 +202,20 @@ def regress(model_dict, train_loader, test_loader, model_name, modality):
 
             best_r2 = r2_mean_test
 
-            # Guardar pesos como siempre
+            # Save weights as always
             model_filename = os.path.join(SAVE_DIR, f"{model_name}_{best_r2:.4f}.pth")
             torch.save(model.state_dict(), model_filename)
 
-            # Verificar que el input usado para TorchScript corresponde a la modalidad actual
+            # Verify that the input used for TorchScript corresponds to the current modality
             example_input = next(iter(test_loader))[0].to(device)
 
-            # Validación para evitar trazado incorrecto con dimensiones de otra modalidad
+            # Validation to avoid incorrect tracing with dimensions from another modality
             if modality == "VIS" and example_input.shape[1] != 1037:
                 raise ValueError(
-                    f"❌ El modelo VIS está recibiendo una entrada de {example_input.shape[1]} bandas (esperado: 1037)")
+                    f"The VIS model is receiving an input of {example_input.shape[1]} bands (expected: 1037)")
             elif modality == "NIR" and example_input.shape[1] != 284:
                 raise ValueError(
-                    f"❌ El modelo NIR está recibiendo una entrada de {example_input.shape[1]} bandas (esperado: 284)")
+                    f"The NIR model is receiving an input of {example_input.shape[1]} bands (expected: 284)")
 
             # print(f"📏 TorchScript input shape para {modality}: {example_input.shape}")
 

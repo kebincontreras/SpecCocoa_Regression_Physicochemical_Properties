@@ -31,7 +31,7 @@ def compute_sam(a, b):
 # =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
 
-base_dir = "data/raw_dataset"
+base_dir = "data/raw_dataset/Spectral_signatures_of_cocoa_beans"
 output_dir = "data"
 os.makedirs(output_dir, exist_ok=True)
 wavelenghts_path = '22_11_2024/Optical_lab_spectral/VIS'
