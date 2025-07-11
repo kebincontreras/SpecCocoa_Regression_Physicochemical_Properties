@@ -33,21 +33,6 @@ REM Check Python architecture
 for /f "tokens=*" %%i in ('python -c "import platform; print(platform.architecture()[0])"') do set PYTHON_ARCH=%%i
 echo Python architecture: %PYTHON_ARCH%
 
-echo Python environment check completed successfully.
-exit /b 0
-    echo.
-    echo RECOMMENDATION:
-    echo 1. Use 'conda create' instead of venv, OR
-    echo 2. Install standalone Python from python.org
-    echo.
-    echo Continuing anyway...
-    timeout /t 3 /nobreak >nul
-)
-
-REM Check Python architecture
-for /f "tokens=*" %%i in ('python -c "import platform; print(platform.architecture()[0])"') do set PYTHON_ARCH=%%i
-echo Python architecture: %PYTHON_ARCH%
-
 REM Check and fix pip if needed
 python -m pip --version >nul 2>&1
 if %errorlevel% neq 0 (
