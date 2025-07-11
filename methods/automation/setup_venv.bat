@@ -36,7 +36,7 @@ if exist "%ENV_NAME%\Scripts\python.exe" (
         set NEED_INSTALL_PACKAGES=1
     )
 ) else (
-    echo 🔄 Environment not found - will create new one
+    echo Environment not found - will create new one
     set NEED_NEW_ENV=1
     set NEED_INSTALL_PACKAGES=1
 )
