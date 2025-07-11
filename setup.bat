@@ -44,6 +44,27 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
+
+REM Check if CUDA was properly detected and offer repair option
+echo.
+echo Checking CUDA status...
+call "%ENV_NAME%\Scripts\activate.bat"
+python -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
+set CUDA_CHECK_RESULT=%errorlevel%
+if %CUDA_CHECK_RESULT% neq 0 (
+    echo.
+    echo ⚠ DETECTION: CUDA not available but you might have GPU
+    echo Do you want to run automatic CUDA repair? [Y/N]
+    set /p REPAIR_CUDA=
+    if /i "!REPAIR_CUDA!"=="Y" (
+        echo Running CUDA repair...
+        call "%AUTOMATION_DIR%\cuda_repair.bat"
+    ) else (
+        echo Continuing with CPU. Note: Training will be slower.
+    )
+) else (
+    echo ✓ CUDA working correctly
+)
 echo.
 
 REM Step 4: Download Dataset

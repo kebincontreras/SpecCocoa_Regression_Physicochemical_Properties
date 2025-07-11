@@ -163,3 +163,46 @@ Generated models are automatically saved based on type and modality under:
 ## License
 
 MIT License – see the `LICENSE` file for details.
+
+---
+
+## GPU/CUDA Troubleshooting
+
+### Problem: "CUDA Available: False" with NVIDIA GPU
+
+If you have an NVIDIA GPU but the system installs CPU-only PyTorch, use these diagnostic and repair scripts:
+
+#### Quick Diagnostics
+```cmd
+methods\automation\quick_gpu_check.bat
+```
+
+#### Automatic CUDA Repair
+```cmd
+methods\automation\cuda_repair.bat
+```
+
+#### Complete Diagnostics
+```cmd
+methods\automation\pytorch_diagnostics.bat
+```
+
+### Common Causes and Solutions
+
+1. **Outdated NVIDIA Drivers**
+   - Download drivers from: https://www.nvidia.com/drivers
+   - Restart after installation
+
+2. **Incompatible CUDA Version**
+   - The `cuda_repair.bat` script automatically detects your CUDA and installs the correct PyTorch version
+
+3. **GPU Not Enabled**
+   - Check in BIOS/UEFI that GPU is enabled
+   - Check power connections
+
+### Important Note
+- **With GPU**: Training 5-10x faster
+- **CPU Only**: Functional but slower (especially for Deep Learning)
+- The system automatically detects your hardware and offers repair if needed
+
+---
