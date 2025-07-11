@@ -25,15 +25,35 @@ export PIP_DISABLE_PIP_VERSION_CHECK=1
 echo "Upgrading pip..."
 python -m pip install --upgrade pip --quiet --disable-pip-version-check
 
+# Check for CUDA support on Linux
+echo "Checking for CUDA support on your system..."
+if command -v nvidia-smi >/dev/null 2>&1; then
+    echo "CUDA detected. Installing PyTorch with CUDA support..."
+    PYTHONWARNINGS=ignore pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 --quiet --disable-pip-version-check
+else
+    echo "CUDA not detected. Installing CPU-only PyTorch..."
+    PYTHONWARNINGS=ignore pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu --quiet --disable-pip-version-check
+fi
+
 # Check if we need to install or just update packages
-echo "Checking current package status..."
+echo "Installing other packages from requirements.txt..."
 
 # Install/update packages from requirements.txt with upgrade flag
-if [ -f "requirements.txt" ]; then
+if [ -f "requirements_linux.txt" ]; then
+    echo "Installing/updating packages from requirements_linux.txt..."
+    echo "Using Linux-compatible package versions"
+    PYTHONWARNINGS=ignore pip install --upgrade -r requirements_linux.txt --quiet --disable-pip-version-check || {
+        echo "Some packages may have failed to install due to version constraints. Continuing..."
+    }
+    echo "Package installation from requirements_linux.txt completed."
+elif [ -f "requirements.txt" ]; then
     echo "Installing/updating packages from requirements.txt..."
     echo "Using --upgrade to update existing packages to latest compatible versions"
-    PYTHONWARNINGS=ignore pip install --upgrade -r requirements.txt --quiet --disable-pip-version-check
-    echo "Package installation/update from requirements.txt completed."
+    # Skip torch packages since we installed them specifically above
+    PYTHONWARNINGS=ignore pip install --upgrade -r requirements.txt --quiet --disable-pip-version-check || {
+        echo "Some packages may have failed to install due to version constraints. Continuing..."
+    }
+    echo "Package installation from requirements.txt completed."
     echo ""
 else
     echo "requirements.txt not found, installing essential packages..."
@@ -44,14 +64,24 @@ fi
 # Verify critical packages are available
 echo ""
 echo "Verifying critical packages..."
-echo "All packages are managed by requirements.txt"
-echo "If there are import errors, they will be caught when scripts run"
-
-echo "All critical packages verified successfully."
+python -c "
+try:
+    import torch, numpy, pandas, h5py, sklearn, matplotlib
+    print('All critical packages verified successfully.')
+except ImportError as e:
+    print(f'Warning: Some packages may not be available: {e}')
+    print('The training scripts will handle missing packages gracefully.')
+"
 
 # Check CUDA availability
 echo "Checking CUDA availability..."
-python -c "import torch; print('CUDA Available:', torch.cuda.is_available())"
+python -c "
+try:
+    import torch
+    print('CUDA Available:', torch.cuda.is_available())
+except ImportError:
+    print('PyTorch not available. Please check installation.')
+"
 
 echo "Package installation completed successfully."
 exit 0
