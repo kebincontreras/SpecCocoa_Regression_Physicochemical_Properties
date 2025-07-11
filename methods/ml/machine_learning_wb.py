@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 # Configure warnings only if not already configured globally
 try:
-    import warnings_config
+    import methods.warnings_config as warnings_config
 except ImportError:
     import warnings
     warnings.filterwarnings('ignore')

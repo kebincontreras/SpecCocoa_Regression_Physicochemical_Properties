@@ -1,4 +1,4 @@
-import warnings_config  # Configure warnings before any other imports
+import methods.warnings_config as warnings_config  # Configure warnings before any other imports
 import os
 import subprocess
 import json

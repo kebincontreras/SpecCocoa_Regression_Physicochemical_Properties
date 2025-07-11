@@ -39,20 +39,15 @@ fi
 echo "Installing other packages from requirements.txt..."
 
 # Install/update packages from requirements.txt with upgrade flag
-if [ -f "requirements_linux.txt" ]; then
-    echo "Installing/updating packages from requirements_linux.txt..."
-    echo "Using Linux-compatible package versions"
-    PYTHONWARNINGS=ignore pip install --upgrade -r requirements_linux.txt --quiet --disable-pip-version-check || {
-        echo "Some packages may have failed to install due to version constraints. Continuing..."
-    }
-    echo "Package installation from requirements_linux.txt completed."
-elif [ -f "requirements.txt" ]; then
+if [ -f "requirements.txt" ]; then
     echo "Installing/updating packages from requirements.txt..."
-    echo "Using --upgrade to update existing packages to latest compatible versions"
-    # Skip torch packages since we installed them specifically above
-    PYTHONWARNINGS=ignore pip install --upgrade -r requirements.txt --quiet --disable-pip-version-check || {
+    echo "Skipping PyTorch packages (already installed above) - installing other packages"
+    # Filter out PyTorch packages and install the rest
+    grep -v "^torch" requirements.txt > temp_requirements.txt
+    PYTHONWARNINGS=ignore pip install --upgrade -r temp_requirements.txt --quiet --disable-pip-version-check || {
         echo "Some packages may have failed to install due to version constraints. Continuing..."
     }
+    rm -f temp_requirements.txt
     echo "Package installation from requirements.txt completed."
     echo ""
 else

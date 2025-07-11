@@ -1,43 +1,57 @@
+# SpecCocoa Regression - Universal Requirements (Windows & Linux)
+# PyTorch included for Windows compatibility, Linux script handles it separately
+
+# PyTorch (Windows will use these, Linux script installs separately)
 torch>=2.0.0
 torchvision>=0.15.0
-#setuptools==80.0.0
+torchaudio>=2.0.0
+
+# Core ML/DL packages
 lightning-utilities>=0.10.0
-numpy<2.0.0
-pandas>=2.3.0
-scipy>=1.16.0
-scikit-learn>=1.7.0
-matplotlib>=3.10.0
+numpy>=1.21.0,<2.0.0
+pandas>=1.5.0
+scipy>=1.9.0
+scikit-learn>=1.1.0
+
+# Visualization and data handling
+matplotlib>=3.5.0
 pydicom>=2.3.0
 opencv-python>=4.5.0
-tqdm>=4.67.0
-wandb>=0.21.0
-einops>=0.8.0
-torchmetrics>=1.7.0
-h5py>=3.14.0
-openpyxl>=3.1.0
+tqdm>=4.60.0
+h5py>=3.7.0
+openpyxl>=3.0.0
 tabulate>=0.8.9
-requests>=2.32.0
-joblib>=1.5.0
+
+# ML/DL utilities
+wandb>=0.15.0
+einops>=0.6.0
+torchmetrics>=0.10.0
+
+# File handling and utilities
+requests>=2.25.0
+joblib>=1.1.0
 rarfile>=4.0
 patoolib>=0.0.1
-huggingface_hub>=0.33.0
-pillow>=11.0.0
-pydantic>=2.11.0
-PyYAML>=6.0.0
+huggingface_hub>=0.15.0
+pillow>=8.0.0
+pydantic>=1.8.0
+PyYAML>=5.4.0
 gitpython>=3.1.0
-click>=8.2.0
-colorama>=0.4.6
-filelock>=3.13.0
-fsspec>=2024.6.0
-jinja2>=3.1.0
-packaging>=25.0
-platformdirs>=4.3.0
-protobuf>=6.31.0
-python-dateutil>=2.9.0
-pytz>=2025.2
-sentry-sdk>=2.32.0
-six>=1.17.0
-sympy>=1.13.0
-threadpoolctl>=3.6.0
-typing-extensions>=4.12.0
-urllib3>=2.5.0
+
+# System utilities
+click>=8.0.0
+colorama>=0.4.4
+filelock>=3.4.0
+fsspec>=2022.1.0
+jinja2>=3.0.0
+packaging>=20.0
+platformdirs>=2.4.0
+protobuf>=3.19.0
+python-dateutil>=2.8.0
+pytz>=2021.1
+sentry-sdk>=1.10.0
+six>=1.16.0
+sympy>=1.8.0
+threadpoolctl>=3.0.0
+typing-extensions>=4.0.0
+urllib3>=1.26.0
