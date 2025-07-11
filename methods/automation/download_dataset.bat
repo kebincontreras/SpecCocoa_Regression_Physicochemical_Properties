@@ -22,6 +22,7 @@ if not exist "data" (
 if not exist "data\raw_dataset" (
     mkdir data\raw_dataset
     echo     → Created data\raw_dataset\ directory
+)
 echo Directory structure verified successfully.
 echo.
 
