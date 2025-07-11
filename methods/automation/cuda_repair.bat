@@ -14,10 +14,10 @@ REM Step 1: Detect NVIDIA GPU
 echo [1/5] Detecting GPU hardware...
 nvidia-smi >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✓ NVIDIA GPU detected
+    echo NVIDIA GPU detected
     nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader,nounits
 ) else (
-    echo ✗ NVIDIA GPU not detected or drivers not installed
+    echo NVIDIA GPU not detected or drivers not installed
     echo.
     echo POSSIBLE SOLUTIONS:
     echo 1. Install or update NVIDIA drivers from: https://www.nvidia.com/drivers
@@ -41,7 +41,7 @@ for /f "tokens=*" %%i in ('nvidia-smi 2^>nul ^| findstr /C:"CUDA Version"') do (
 )
 
 if defined CUDA_VERSION (
-    echo ✓ CUDA detected via nvidia-smi: %CUDA_VERSION%
+    echo CUDA detected via nvidia-smi: %CUDA_VERSION%
     for /f "tokens=1 delims=." %%a in ("%CUDA_VERSION%") do set CUDA_MAJOR=%%a
 ) else (
     REM Method 2: nvcc if available
@@ -52,10 +52,10 @@ if defined CUDA_VERSION (
             set CUDA_VERSION=!CUDA_VERSION:~0,-1!
             for /f "tokens=1 delims=." %%a in ("!CUDA_VERSION!") do set CUDA_MAJOR=%%a
         )
-        echo ✓ CUDA detected via nvcc: !CUDA_VERSION!
+        echo CUDA detected via nvcc: !CUDA_VERSION!
     ) else (
-        echo ⚠ CUDA not detected by standard methods
-        echo → Assuming CUDA 11.8 compatible (most common)
+        echo CUDA not detected by standard methods
+        echo Assuming CUDA 11.8 compatible (most common)
         set CUDA_MAJOR=11
         set CUDA_VERSION=11.8
     )
@@ -72,15 +72,15 @@ REM Step 4: Install appropriate PyTorch
 echo [4/5] Installing optimized PyTorch for your GPU...
 
 if %CUDA_MAJOR% geq 12 (
-    echo → Installing PyTorch for CUDA 12.x
+    echo Installing PyTorch for CUDA 12.x
     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
     set TORCH_TYPE=CUDA 12.1
 ) else if %CUDA_MAJOR% geq 11 (
-    echo → Installing PyTorch for CUDA 11.x
+    echo Installing PyTorch for CUDA 11.x
     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
     set TORCH_TYPE=CUDA 11.8
 ) else if %CUDA_MAJOR% geq 10 (
-    echo → Old CUDA but compatible, using CUDA 11.8
+    echo Old CUDA but compatible, using CUDA 11.8
     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
     set TORCH_TYPE=CUDA 11.8 (compatible)
 ) else (
@@ -90,7 +90,7 @@ if %CUDA_MAJOR% geq 12 (
 goto :verify
 
 :install_cpu
-echo → Installing CPU-optimized PyTorch
+echo Installing CPU-optimized PyTorch
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 set TORCH_TYPE=CPU-only
 
@@ -127,29 +127,29 @@ if cuda_available:
     try:
         x = torch.rand(5, 3).cuda()
         y = x * 2
-        print('✓ Basic GPU test: SUCCESS')
+        print('Basic GPU test: SUCCESS')
     except Exception as e:
-        print(f'✗ Basic GPU test: FAILED - {e}')
+        print(f'Basic GPU test: FAILED - {e}')
 else:
-    print('→ Using CPU mode (no GPU acceleration)')
+    print('Using CPU mode (no GPU acceleration)')
     
 # Basic CPU test
 try:
     x = torch.rand(5, 3)
     y = x * 2
-    print('✓ Basic CPU test: SUCCESS')
+    print('Basic CPU test: SUCCESS')
 except Exception as e:
-    print(f'✗ Basic CPU test: FAILED - {e}')
+    print(f'Basic CPU test: FAILED - {e}')
 
 print('=' * 50)
 "
 
 if %errorlevel% neq 0 (
     echo.
-    echo ⚠ ERROR: Verification failed. Installing fallback version...
+    echo ERROR: Verification failed. Installing fallback version...
     pip uninstall torch torchvision torchaudio -y
     pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-    echo ✓ PyTorch CPU installed as fallback
+    echo PyTorch CPU installed as fallback
 )
 
 echo.

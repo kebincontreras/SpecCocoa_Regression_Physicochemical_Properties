@@ -41,6 +41,32 @@ if [ $? -ne 0 ]; then
     echo "Package installation failed."
     exit 1
 fi
+
+# Check if CUDA was properly detected and auto-repair if needed
+echo ""
+echo "Checking CUDA status..."
+source "${ENV_NAME}/bin/activate"
+python -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >/dev/null 2>&1
+CUDA_CHECK_RESULT=$?
+if [ $CUDA_CHECK_RESULT -ne 0 ]; then
+    echo ""
+    echo "DETECTION: CUDA not available but you might have GPU"
+    echo "Running automatic CUDA repair..."
+    if [ -f "${AUTOMATION_DIR}/cuda_repair.sh" ]; then
+        bash "${AUTOMATION_DIR}/cuda_repair.sh"
+        if [ $? -eq 0 ]; then
+            echo "CUDA repair completed successfully"
+        else
+            echo "CUDA repair had issues, continuing with CPU mode"
+            echo "Note: Training will be slower without GPU acceleration"
+        fi
+    else
+        echo "CUDA repair script not found, continuing with CPU mode"
+        echo "Note: Training will be slower without GPU acceleration"
+    fi
+else
+    echo "CUDA working correctly"
+fi
 echo ""
 
 # Step 4: Download Dataset
