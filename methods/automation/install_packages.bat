@@ -27,14 +27,45 @@ python -m pip install --upgrade pip --quiet
 
 REM Check for CUDA availability before installing PyTorch
 echo Checking for CUDA support on your system...
+echo.
+
+REM First, try to detect NVIDIA GPU
 nvidia-smi >nul 2>&1
 if %errorlevel% equ 0 (
-    echo CUDA detected! Installing PyTorch with CUDA support...
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    echo NVIDIA GPU detected! Checking CUDA version compatibility...
+    
+    REM Get CUDA version if available
+    for /f "tokens=9" %%i in ('nvidia-smi ^| findstr "CUDA Version"') do set CUDA_VERSION=%%i
+    echo Detected CUDA Version: %CUDA_VERSION%
+    
+    REM Install PyTorch based on CUDA version
+    if "%CUDA_VERSION%" geq "12.0" (
+        echo Installing PyTorch with CUDA 12.1 support...
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+    ) else if "%CUDA_VERSION%" geq "11.8" (
+        echo Installing PyTorch with CUDA 11.8 support...
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    ) else (
+        echo CUDA version too old or unsupported. Installing CPU-only PyTorch...
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+    )
 ) else (
-    echo CUDA not detected. Installing CPU-only PyTorch...
-    pip install torch torchvision torchaudio
+    echo NVIDIA GPU not detected or drivers not installed.
+    echo Installing CPU-only PyTorch for maximum compatibility...
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 )
+
+REM Verify PyTorch installation
+echo.
+echo Verifying PyTorch installation...
+python -c "import torch; print(f'PyTorch {torch.__version__} installed successfully'); print(f'CUDA Available: {torch.cuda.is_available()}')" 2>nul
+if %errorlevel% neq 0 (
+    echo WARNING: PyTorch installation may have issues. Trying fallback installation...
+    pip uninstall torch torchvision torchaudio -y
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+    python -c "import torch; print(f'Fallback PyTorch {torch.__version__} installed')"
+)
+echo.
 
 REM Install other requirements
 if exist "requirements.txt" (
