@@ -15,20 +15,20 @@ echo   SpecCocoa Regression Project Setup and Run
 echo ============================================
 
 REM ==============================
-REM   Check Python 3.10+
+REM   Verificar Python 3.10+
 REM ==============================
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Error: Python is not installed or not in PATH.
+    echo Error: Python no está instalado o no está en PATH.
     pause
     exit /b 1
 )
-echo Python detected:
+echo Python detectado:
 python --version
 
-REM Get Python executable path
+REM Obtener ruta de Python
 for /f "tokens=*" %%i in ('python -c "import sys; print(sys.executable)"') do set PYTHON_PATH=%%i
-echo Python executable: %PYTHON_PATH%
+echo Ejecutable de Python: %PYTHON_PATH%
 
 REM Verificar pip
 python -m pip --version >nul 2>&1
@@ -165,7 +165,45 @@ if %NEED_INSTALL_PACKAGES%==1 (
     echo Paquetes ya instalados, omitiendo instalación.
 )
 
+REM ==============================
+REM   Find compatible Python (3.10, 3.9, 3.8 only)
+REM ==============================
+set PY_OK=0
+set PY_CMD=
 
+for %%V in (3.10 3.9 3.8) do (
+    py -%%V --version > tmp_py_version.txt 2>&1
+    findstr "Python %%V" tmp_py_version.txt >nul 2>&1
+    if not errorlevel 1 (
+        set PY_OK=1
+        set PY_CMD=py -%%V
+        goto :found_python
+    )
+)
+del tmp_py_version.txt
+
+:found_python
+if %PY_OK%==0 (
+    echo ==========================================================
+    echo  ERROR: No compatible Python found (3.10, 3.9, or 3.8).
+    echo  Please install Python 3.10, 3.9, or 3.8 from https://www.python.org/downloads/
+    echo ==========================================================
+    pause
+    exit /b 1
+)
+
+echo Using Python: %PY_CMD%
+
+REM Create virtual environment only if it does not exist
+if not exist "%ENV_NAME%\Scripts\python.exe" (
+    echo Creating virtual environment with %PY_CMD% ...
+    %PY_CMD% -m venv "%ENV_NAME%"
+    if %errorlevel% neq 0 (
+        echo Error creating virtual environment.
+        pause
+        exit /b 1
+    )
+)
 
 REM ==============================
 REM   Flujo principal del proyecto
