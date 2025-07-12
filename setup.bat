@@ -1,6 +1,6 @@
 @echo off
 REM =============================================================================
-REM SpecCocoa Regression Project - Setup & Run (simple, PyTorch CUDA 11.8 fijo)
+REM SpecCocoa Regression Project - Setup & Run (PyTorch CUDA 11.8/12.1 auto, Python 3.10)
 REM =============================================================================
 
 setlocal enabledelayedexpansion
@@ -15,22 +15,61 @@ echo   SpecCocoa Regression Project Setup and Run
 echo ============================================
 
 REM ==============================
-REM   Verificar Python
+REM   Buscar Python compatible (3.8, 3.9, 3.10, 3.11)
 REM ==============================
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Error: Python no está instalado o no está en PATH.
+set PY_OK=0
+set PY_CMD=
+
+for %%V in (3.10 3.9 3.8 3.11) do (
+    py -%%V --version > tmp_py_version.txt 2>&1
+    findstr "Python %%V" tmp_py_version.txt >nul 2>&1
+    if not errorlevel 1 (
+        set PY_OK=1
+        set PY_CMD=py -%%V
+        goto :found_python
+    )
+)
+del tmp_py_version.txt
+
+:found_python
+if %PY_OK%==0 (
+    echo ==========================================================
+    echo  ERROR: No se encontró Python 3.8, 3.9, 3.10 ni 3.11 en el sistema.
+    echo  Descarga e instala una versión compatible desde https://www.python.org/downloads/
+    echo ==========================================================
     pause
     exit /b 1
 )
-echo Python detectado:
-python --version
 
-REM Obtener ruta de Python
-for /f "tokens=*" %%i in ('python -c "import sys; print(sys.executable)"') do set PYTHON_PATH=%%i
-echo Ejecutable de Python: %PYTHON_PATH%
+echo Usando Python con: %PY_CMD%
 
-REM Verificar pip
+REM ==============================
+REM   Verificar pip y crear entorno virtual
+REM ==============================
+if not exist "%ENV_NAME%\Scripts\python.exe" (
+    echo Creando entorno virtual con %PY_CMD% ...
+    %PY_CMD% -m venv "%ENV_NAME%"
+    if %errorlevel% neq 0 (
+        echo Error al crear el entorno virtual.
+        pause
+        exit /b 1
+    )
+)
+
+REM Activar entorno virtual
+echo.
+echo Activando entorno virtual...
+call "%ENV_NAME%\Scripts\activate.bat"
+if %errorlevel% neq 0 (
+    echo Error al activar el entorno.
+    pause
+    exit /b 1
+)
+echo Entorno activado correctamente
+
+REM ==============================
+REM   Verificar pip
+REM ==============================
 python -m pip --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo pip no está disponible. Intentando reparar...
@@ -121,15 +160,33 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-echo Entorno activado correctamente
+echo Entorno activado correctamente (Python 3.10 requerido)
 
 if %NEED_INSTALL_PACKAGES%==1 (
     echo Instalando paquetes requeridos...
     python -m pip install --upgrade pip --quiet
 
-    REM Instalar SIEMPRE PyTorch CUDA 11.8 (igual que GBM)
-    echo Instalando PyTorch CUDA 11.8...
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    REM Detectar versión de CUDA y elegir el índice de PyTorch adecuado
+    nvidia-smi | findstr "CUDA Version" > temp_cuda.txt 2>nul
+    set CUDA_MAJOR=
+    if exist temp_cuda.txt (
+        for /f "tokens=9" %%j in (temp_cuda.txt) do (
+            set CUDA_VER=%%j
+            for /f "tokens=1 delims=." %%a in ("%%j") do set CUDA_MAJOR=%%a
+        )
+        del temp_cuda.txt
+    )
+    if not defined CUDA_MAJOR (
+        set CUDA_MAJOR=11
+    )
+
+    if %CUDA_MAJOR% geq 12 (
+        echo Instalando PyTorch CUDA 12.1...
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+    ) else (
+        echo Instalando PyTorch CUDA 11.8...
+        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    )
 
     REM Instalar requerimientos adicionales del proyecto
     if exist "%REQUIREMENTS_FILE%" (
