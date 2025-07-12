@@ -1,11 +1,10 @@
 @echo off
-REM =============================================================================
-REM SpecCocoa Regression Project - Setup & Run (lógica robusta tipo run_project_GBM, fix if/empty CUDA_MAJOR)
-REM =============================================================================
-
 setlocal enabledelayedexpansion
 
-REM Configuración del proyecto
+REM =============================================================================
+REM SpecCocoa Regression Project - Setup & Run
+REM =============================================================================
+
 set PROJECT_NAME=SpecCocoa_Regression
 set ENV_NAME=Regressio_cocoa_venv
 set REQUIREMENTS_FILE=requirements.txt
@@ -15,27 +14,45 @@ echo   SpecCocoa Regression Project Setup and Run
 echo ============================================
 
 REM ==============================
-REM   Verificar Python 3.10+
+REM   Find compatible Python (3.10, 3.9, 3.8 only)
 REM ==============================
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Error: Python no está instalado o no está en PATH.
+set PY_OK=0
+set PY_CMD=
+
+for %%V in (3.10 3.9 3.8) do (
+    py -%%V --version > tmp_py_version.txt 2>&1
+    findstr "Python %%V" tmp_py_version.txt >nul 2>&1
+    if not errorlevel 1 (
+        set PY_OK=1
+        set PY_CMD=py -%%V
+        goto :found_python
+    )
+)
+del tmp_py_version.txt
+
+:found_python
+if %PY_OK%==0 (
+    echo ==========================================================
+    echo  ERROR: No compatible Python found (3.10, 3.9, or 3.8).
+    echo  Please install Python 3.10 from: https://www.python.org/downloads/
+    echo ==========================================================
     pause
     exit /b 1
 )
-echo Python detectado:
-python --version
+
+echo Compatible Python found: !PY_CMD!
+!PY_CMD! --version
 
 REM Obtener ruta de Python
-for /f "tokens=*" %%i in ('python -c "import sys; print(sys.executable)"') do set PYTHON_PATH=%%i
-echo Ejecutable de Python: %PYTHON_PATH%
+for /f "tokens=*" %%i in ('!PY_CMD! -c "import sys; print(sys.executable)"') do set PYTHON_PATH=%%i
+echo Ejecutable de Python: !PYTHON_PATH!
 
 REM Verificar pip
-python -m pip --version >nul 2>&1
+!PY_CMD! -m pip --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo pip no está disponible. Intentando reparar...
-    python -m ensurepip --upgrade --default-pip --user >nul 2>&1
-    python -m pip --version >nul 2>&1
+    !PY_CMD! -m ensurepip --upgrade --default-pip --user >nul 2>&1
+    !PY_CMD! -m pip --version >nul 2>&1
     if %errorlevel% neq 0 (
         echo Error: No se pudo reparar pip.
         pause
@@ -44,7 +61,7 @@ if %errorlevel% neq 0 (
 )
 
 REM Verificar módulo venv
-python -m venv --help >nul 2>&1
+!PY_CMD! -m venv --help >nul 2>&1
 if %errorlevel% neq 0 (
     echo Error: El módulo venv no está disponible. Reinstala Python.
     pause
@@ -89,7 +106,7 @@ if %NEED_NEW_ENV%==1 (
         echo Eliminando entorno anterior...
         rmdir /s /q "%ENV_NAME%" >nul 2>&1
     )
-    python -m venv "%ENV_NAME%"
+    !PY_CMD! -m venv "%ENV_NAME%"
     if %errorlevel% neq 0 (
         echo Error al crear el entorno virtual.
         pause
@@ -137,12 +154,10 @@ if %NEED_INSTALL_PACKAGES%==1 (
         )
         del temp_cuda.txt
     )
-    REM Si sigue vacío, forzar a 11
     if "%CUDA_MAJOR%"=="" set CUDA_MAJOR=11
 
     echo CUDA_MAJOR detectado: %CUDA_MAJOR%
 
-    REM Comparación robusta para evitar error de sintaxis si está vacío
     setlocal EnableDelayedExpansion
     if "!CUDA_MAJOR!" GEQ "12" (
         echo Instalando PyTorch CUDA 12.1...
@@ -166,49 +181,9 @@ if %NEED_INSTALL_PACKAGES%==1 (
 )
 
 REM ==============================
-REM   Find compatible Python (3.10, 3.9, 3.8 only)
-REM ==============================
-set PY_OK=0
-set PY_CMD=
-
-for %%V in (3.10 3.9 3.8) do (
-    py -%%V --version > tmp_py_version.txt 2>&1
-    findstr "Python %%V" tmp_py_version.txt >nul 2>&1
-    if not errorlevel 1 (
-        set PY_OK=1
-        set PY_CMD=py -%%V
-        goto :found_python
-    )
-)
-del tmp_py_version.txt
-
-:found_python
-if %PY_OK%==0 (
-    echo ==========================================================
-    echo  ERROR: No compatible Python found (3.10, 3.9, or 3.8).
-    echo  Please install Python 3.10, 3.9, or 3.8 from https://www.python.org/downloads/
-    echo ==========================================================
-    pause
-    exit /b 1
-)
-
-echo Using Python: %PY_CMD%
-
-REM Create virtual environment only if it does not exist
-if not exist "%ENV_NAME%\Scripts\python.exe" (
-    echo Creating virtual environment with %PY_CMD% ...
-    %PY_CMD% -m venv "%ENV_NAME%"
-    if %errorlevel% neq 0 (
-        echo Error creating virtual environment.
-        pause
-        exit /b 1
-    )
-)
-
-REM ==============================
 REM   Flujo principal del proyecto
 REM ==============================
-REM Step 4: Download Dataset
+
 echo [4/7] Downloading Dataset...
 call methods\automation\download_dataset.bat
 if %errorlevel% neq 0 (
@@ -218,7 +193,6 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-REM Step 5: Extract Dataset
 echo [5/7] Extracting Dataset...
 call methods\automation\extract_dataset.bat "%ENV_NAME%"
 if %errorlevel% neq 0 (
@@ -228,7 +202,6 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-REM Step 6: Process Scripts
 echo [6/7] Processing Data Scripts...
 call methods\automation\process_scripts.bat "%ENV_NAME%"
 if %errorlevel% neq 0 (
@@ -238,7 +211,6 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-REM Step 7: Train and Test
 echo [7/7] Training and Testing Models...
 call methods\automation\train_test.bat "%ENV_NAME%"
 if %errorlevel% neq 0 (
@@ -253,14 +225,6 @@ echo    Execution Completed Successfully
 echo ============================================
 echo All scripts executed correctly.
 echo The project is ready to use.
-echo.
-echo Generated files:
-echo   - Trained models in: models/
-echo   - Figures in: figures/
-echo   - Logs in: logs/
-echo   - Processed datasets in: data/
-echo.
-pause
 echo.
 echo Generated files:
 echo   - Trained models in: models/
