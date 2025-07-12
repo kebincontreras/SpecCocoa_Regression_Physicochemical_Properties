@@ -1,6 +1,6 @@
 @echo off
 REM =============================================================================
-REM SpecCocoa Regression Project - Setup & Run (PyTorch CUDA 11.8/12.1 auto, Python 3.10)
+REM SpecCocoa Regression Project - Setup & Run (lógica robusta tipo run_project_GBM, fix if/empty CUDA_MAJOR)
 REM =============================================================================
 
 setlocal enabledelayedexpansion
@@ -15,61 +15,22 @@ echo   SpecCocoa Regression Project Setup and Run
 echo ============================================
 
 REM ==============================
-REM   Buscar Python compatible (3.8, 3.9, 3.10, 3.11)
+REM   Check Python 3.10+
 REM ==============================
-set PY_OK=0
-set PY_CMD=
-
-for %%V in (3.10 3.9 3.8 3.11) do (
-    py -%%V --version > tmp_py_version.txt 2>&1
-    findstr "Python %%V" tmp_py_version.txt >nul 2>&1
-    if not errorlevel 1 (
-        set PY_OK=1
-        set PY_CMD=py -%%V
-        goto :found_python
-    )
-)
-del tmp_py_version.txt
-
-:found_python
-if %PY_OK%==0 (
-    echo ==========================================================
-    echo  ERROR: No se encontró Python 3.8, 3.9, 3.10 ni 3.11 en el sistema.
-    echo  Descarga e instala una versión compatible desde https://www.python.org/downloads/
-    echo ==========================================================
-    pause
-    exit /b 1
-)
-
-echo Usando Python con: %PY_CMD%
-
-REM ==============================
-REM   Verificar pip y crear entorno virtual
-REM ==============================
-if not exist "%ENV_NAME%\Scripts\python.exe" (
-    echo Creando entorno virtual con %PY_CMD% ...
-    %PY_CMD% -m venv "%ENV_NAME%"
-    if %errorlevel% neq 0 (
-        echo Error al crear el entorno virtual.
-        pause
-        exit /b 1
-    )
-)
-
-REM Activar entorno virtual
-echo.
-echo Activando entorno virtual...
-call "%ENV_NAME%\Scripts\activate.bat"
+python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Error al activar el entorno.
+    echo Error: Python is not installed or not in PATH.
     pause
     exit /b 1
 )
-echo Entorno activado correctamente
+echo Python detected:
+python --version
 
-REM ==============================
-REM   Verificar pip
-REM ==============================
+REM Get Python executable path
+for /f "tokens=*" %%i in ('python -c "import sys; print(sys.executable)"') do set PYTHON_PATH=%%i
+echo Python executable: %PYTHON_PATH%
+
+REM Verificar pip
 python -m pip --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo pip no está disponible. Intentando reparar...
@@ -160,7 +121,7 @@ if %errorlevel% neq 0 (
     pause
     exit /b 1
 )
-echo Entorno activado correctamente (Python 3.10 requerido)
+echo Entorno activado correctamente
 
 if %NEED_INSTALL_PACKAGES%==1 (
     echo Instalando paquetes requeridos...
@@ -176,17 +137,21 @@ if %NEED_INSTALL_PACKAGES%==1 (
         )
         del temp_cuda.txt
     )
-    if not defined CUDA_MAJOR (
-        set CUDA_MAJOR=11
-    )
+    REM Si sigue vacío, forzar a 11
+    if "%CUDA_MAJOR%"=="" set CUDA_MAJOR=11
 
-    if %CUDA_MAJOR% geq 12 (
+    echo CUDA_MAJOR detectado: %CUDA_MAJOR%
+
+    REM Comparación robusta para evitar error de sintaxis si está vacío
+    setlocal EnableDelayedExpansion
+    if "!CUDA_MAJOR!" GEQ "12" (
         echo Instalando PyTorch CUDA 12.1...
         pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
     ) else (
         echo Instalando PyTorch CUDA 11.8...
         pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
     )
+    endlocal
 
     REM Instalar requerimientos adicionales del proyecto
     if exist "%REQUIREMENTS_FILE%" (
@@ -200,23 +165,7 @@ if %NEED_INSTALL_PACKAGES%==1 (
     echo Paquetes ya instalados, omitiendo instalación.
 )
 
-REM Verificar dependencias principales
-echo Verificando dependencias principales...
-python -c "import torch, numpy, pandas, matplotlib, sklearn; print('Dependencias principales OK')" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Error: Faltan dependencias principales.
-    pause
-    exit /b 1
-) else (
-    echo Todas las dependencias principales están instaladas.
-)
 
-REM Crear carpetas necesarias
-echo Creando carpetas necesarias...
-if not exist "models" mkdir models
-if not exist "figures" mkdir figures
-if not exist "logs" mkdir logs
-if not exist "data" mkdir data
 
 REM ==============================
 REM   Flujo principal del proyecto

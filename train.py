@@ -4,6 +4,7 @@ import subprocess
 import json
 import torch
 from methods.dl.deep_learning_wb import *
+import sys  # Import sys for using sys.executable
 
 # Path to the experiments JSON file in resources/
 EXPERIMENTS_FILE = "methods/resources/experiments.json"
@@ -69,12 +70,18 @@ def run_experiments():
     with open(dl_config_path, "w") as dl_file:
         json.dump(DL_MODELS, dl_file, indent=4)
 
+    # --- W&B login automático si hay clave en variable de entorno ---
+    wandb_api_key = os.environ.get("WANDB_API_KEY", None)
+    if (EXECUTE_ML or EXECUTE_DL) and wandb_api_key:
+        import wandb
+        wandb.login(key=wandb_api_key)
+
     # Run Machine Learning experiments
     if EXECUTE_ML:
         for mod in MODALITIES:
             print(f"Running Machine Learning for {mod}...\n")
             subprocess.run([
-                'python', '-W', 'ignore', 'methods/ml/machine_learning_wb.py', '--modality', mod, '--config', 'configs/ml_hyperparams.json', '--wb_project', WB_PROJECT_ML
+                sys.executable, '-W', 'ignore', 'methods/ml/machine_learning_wb.py', '--modality', mod, '--config', 'configs/ml_hyperparams.json', '--wb_project', WB_PROJECT_ML
             ], check=True, env={**os.environ, 'PYTHONWARNINGS': 'ignore'})
 
     # Run Deep Learning experiments
@@ -82,7 +89,7 @@ def run_experiments():
         for mod in MODALITIES:
             print(f"Running Deep Learning for {mod}...\n")
             subprocess.run([
-                'python', '-W', 'ignore', 'methods/dl/deep_learning_wb.py', '--modality', mod, '--config', 'configs/dl_models.json', '--wb_project', WB_PROJECT_DL
+                sys.executable, '-W', 'ignore', 'methods/dl/deep_learning_wb.py', '--modality', mod, '--config', 'configs/dl_models.json', '--wb_project', WB_PROJECT_DL
             ], check=True, env={**os.environ, 'PYTHONWARNINGS': 'ignore'})
 
     print("All experiments have been successfully executed.")

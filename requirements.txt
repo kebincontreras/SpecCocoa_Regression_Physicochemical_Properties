@@ -1,6 +1,3 @@
-# SpecCocoa Regression - Universal Requirements (Windows & Linux)
-# PyTorch included for Windows compatibility, Linux script handles it separately
-
 # PyTorch (Windows will use these, Linux script installs separately)
 torch>=2.0.0
 torchvision>=0.15.0
