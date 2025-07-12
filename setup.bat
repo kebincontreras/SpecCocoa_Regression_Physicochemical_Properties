@@ -1,6 +1,6 @@
 @echo off
 REM =============================================================================
-REM SpecCocoa Regression Project - Setup & Run (adaptado de run_project_GBM.bat)
+REM SpecCocoa Regression Project - Setup & Run (simple, PyTorch CUDA 11.8 fijo)
 REM =============================================================================
 
 setlocal enabledelayedexpansion
@@ -9,7 +9,6 @@ REM Configuración del proyecto
 set PROJECT_NAME=SpecCocoa_Regression
 set ENV_NAME=Regressio_cocoa_venv
 set REQUIREMENTS_FILE=requirements.txt
-set AUTOMATION_DIR=methods\automation
 
 echo ============================================
 echo   SpecCocoa Regression Project Setup and Run
@@ -128,16 +127,9 @@ if %NEED_INSTALL_PACKAGES%==1 (
     echo Instalando paquetes requeridos...
     python -m pip install --upgrade pip --quiet
 
-    REM Instalar PyTorch según disponibilidad de CUDA (igual que GBM)
-    echo Verificando soporte CUDA...
-    nvidia-smi >nul 2>&1
-    if %errorlevel% equ 0 (
-        echo CUDA detectado, instalando PyTorch con soporte CUDA...
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-    ) else (
-        echo CUDA no detectado, instalando PyTorch CPU...
-        pip install torch torchvision torchaudio
-    )
+    REM Instalar SIEMPRE PyTorch CUDA 11.8 (igual que GBM)
+    echo Instalando PyTorch CUDA 11.8...
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
     REM Instalar requerimientos adicionales del proyecto
     if exist "%REQUIREMENTS_FILE%" (
@@ -174,7 +166,7 @@ REM   Flujo principal del proyecto
 REM ==============================
 REM Step 4: Download Dataset
 echo [4/7] Downloading Dataset...
-call "%AUTOMATION_DIR%\download_dataset.bat"
+call methods\automation\download_dataset.bat
 if %errorlevel% neq 0 (
     echo Dataset download failed.
     pause
@@ -184,7 +176,7 @@ echo.
 
 REM Step 5: Extract Dataset
 echo [5/7] Extracting Dataset...
-call "%AUTOMATION_DIR%\extract_dataset.bat" "%ENV_NAME%"
+call methods\automation\extract_dataset.bat "%ENV_NAME%"
 if %errorlevel% neq 0 (
     echo Dataset extraction failed.
     pause
@@ -194,7 +186,7 @@ echo.
 
 REM Step 6: Process Scripts
 echo [6/7] Processing Data Scripts...
-call "%AUTOMATION_DIR%\process_scripts.bat" "%ENV_NAME%"
+call methods\automation\process_scripts.bat "%ENV_NAME%"
 if %errorlevel% neq 0 (
     echo Data processing failed.
     pause
@@ -204,7 +196,7 @@ echo.
 
 REM Step 7: Train and Test
 echo [7/7] Training and Testing Models...
-call "%AUTOMATION_DIR%\train_test.bat" "%ENV_NAME%"
+call methods\automation\train_test.bat "%ENV_NAME%"
 if %errorlevel% neq 0 (
     echo Training and testing failed.
     pause
@@ -217,6 +209,14 @@ echo    Execution Completed Successfully
 echo ============================================
 echo All scripts executed correctly.
 echo The project is ready to use.
+echo.
+echo Generated files:
+echo   - Trained models in: models/
+echo   - Figures in: figures/
+echo   - Logs in: logs/
+echo   - Processed datasets in: data/
+echo.
+pause
 echo.
 echo Generated files:
 echo   - Trained models in: models/
