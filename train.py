@@ -6,6 +6,9 @@ import torch
 from methods.dl.deep_learning_wb import *
 import sys  # Import sys for using sys.executable
 
+import wandb
+wandb.login(key="077a3065a6d9ac673fed8026df7a59207aba8996")
+
 # Path to the experiments JSON file in resources/
 EXPERIMENTS_FILE = "methods/resources/experiments.json"
 
