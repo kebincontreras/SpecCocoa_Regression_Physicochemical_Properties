@@ -58,8 +58,7 @@ debug_pca = True  # debug pca mode
 
 entrega_numbers = ['Huila', 'Putumayo', 'Peru1', 'Peru2', 'Peru3']
 ferm_levels = [60, 96, 100, 100, 100]
-colors = [
-    'red', 'blue', 'green', 'orange', 'purple']
+colors = ['red', 'blue', 'green', 'orange', 'purple']
 
 # Lista de marcadores únicos
 markers = ['o', 's', 'D', 'P', 'X']
@@ -202,8 +201,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
                 plt.tight_layout()
                 plt.show()
-                # plt.pause(2)
-                # plt.close()
+                plt.pause(2)
+                plt.close()
 
             # get conveyor belt signatures
 
@@ -244,8 +243,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
                 plt.tight_layout()
                 plt.show()
-                # plt.pause(2)
-                # plt.close()
+                plt.pause(2)
+                plt.close()
 
             # get cocoa lot with reflectance
 
@@ -282,8 +281,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
                 plt.tight_layout()
                 plt.show()
-                # plt.pause(2)
-                # plt.close()
+                plt.pause(2)
+                plt.close()
 
             # append to dataset
 
@@ -320,7 +319,7 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
             X_class = cocoa_bean_dataset[i]
             mean = X_class.mean(axis=0)
             std = X_class.std(axis=0)
-            plt.plot(wavelengths, mean, color=colors[i], label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
+            plt.plot(wavelengths, mean, color=colors[i], label=f'{entrega_numbers[i]}-F{ferm_levels[i]}')
             plt.fill_between(wavelengths, mean - std, mean + std, alpha=0.2, color=colors[i], linewidth=0.0)
 
         plt.legend()
@@ -331,8 +330,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         plt.grid()
         plt.tight_layout()
         plt.show()
-        # plt.pause(2)
-        # plt.close()
+        plt.pause(2)
+        plt.close()
 
     # compute PCA with X_mean using sklearn
 
@@ -343,20 +342,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
     scaler = StandardScaler()
     full_cocoa_bean_dataset = scaler.fit_transform(full_cocoa_bean_dataset)
-
-    if subset_name == 'train':
-        pca = PCA(n_components=2)
-        pca.fit(full_cocoa_bean_dataset)
-        pcas['train'] = pca
-
-        # Save the model
-        joblib.dump(pca, os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
-    else:
-        try:
-            pca = pcas['train']
-        except:
-            pca = joblib.load(os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
-
+        
+    pca = joblib.load(os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
     X_pca = pca.transform(full_cocoa_bean_dataset)
 
     if debug_pca:
@@ -364,15 +351,15 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         for i in range(len(cocoa_bean_dataset)):
             X_class = X_pca[full_label_dataset.squeeze() == i]
             plt.scatter(X_class[:, 0], X_class[:, 1], color=colors[i], alpha=0.5, marker=markers[i],
-                        label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
+                        label=f'{entrega_numbers[i]}-F{ferm_levels[i]}')
 
         plt.title(f'Cocoa dataset PCA')
         plt.grid()
         plt.legend()
         plt.tight_layout()
         plt.show()
-        # plt.pause(2)
-        # plt.close()
+        plt.pause(2)
+        plt.close()
 
     # plot cocoa bean batch mean dataset
 
@@ -381,7 +368,7 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         X_class = cocoa_bean_batch_mean_dataset[i]
         mean = X_class.mean(axis=0)
         std = X_class.std(axis=0)
-        plt.plot(wavelengths, mean, color=colors[i], label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
+        plt.plot(wavelengths, mean, color=colors[i], label=f'{entrega_numbers[i]}-F{ferm_levels[i]}')
         plt.fill_between(wavelengths, mean - std, mean + std, alpha=0.2, color=colors[i], linewidth=0.0)
 
     plt.legend()
@@ -392,8 +379,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
     plt.grid()
     plt.tight_layout()
     plt.show()
-    # plt.pause(2)
-    # plt.close()
+    plt.pause(2)
+    plt.close()
 
     # compute PCA with X_mean using sklearn
 
@@ -404,20 +391,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
     scaler = StandardScaler()
     full_cocoa_bean_batch_mean_dataset = scaler.fit_transform(full_cocoa_bean_batch_mean_dataset)
-
-    if subset_name == 'train':
-        pca = PCA(n_components=2)
-        pca.fit(full_cocoa_bean_batch_mean_dataset)
-        pcas['train_mean'] = pca
-
-        # Save the model
-        joblib.dump(pca, os.path.join(output_dir, f'pca_mean_vis_{pca_name}.pkl'))
-    else:
-        try:
-            pca = pcas['train']
-        except:
-            pca = joblib.load(os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
-
+    
+    pca = joblib.load(os.path.join(output_dir, f'pca_mean_vis_{pca_name}.pkl'))
     X_pca = pca.transform(full_cocoa_bean_batch_mean_dataset)
 
     if debug_pca:
@@ -425,12 +400,12 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         for i in range(len(cocoa_bean_dataset)):
             X_class = X_pca[full_label_batch_mean_dataset.squeeze() == i]
             plt.scatter(X_class[:, 0], X_class[:, 1], color=colors[i], alpha=0.5, marker=markers[i],
-                        label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
+                        label=f'{entrega_numbers[i]}-F{ferm_levels[i]}')
 
         plt.title(f'Cocoa dataset PCA')
         plt.grid()
         plt.legend()
         plt.tight_layout()
         plt.show()
-        # plt.pause(2)
-        # plt.close()
+        plt.pause(2)
+        plt.close()
