@@ -568,9 +568,12 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         pcas['train'] = pca
 
         # Save the model
-        # joblib.dump(pca, os.path.join(output_dir, f'pca_nir_{pca_name}.pkl'))
+        joblib.dump(pca, os.path.join(output_dir, f'pca_nir_{pca_name}.pkl'))
     else:
-        pca = pcas['train']
+        try:
+            pca = pcas['train']
+        except:
+            pca = joblib.load(os.path.join(output_dir, f'pca_nir_{pca_name}.pkl'))
 
     X_pca = pca.transform(full_cocoa_bean_dataset)
 
@@ -591,7 +594,7 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         plt.show()
         plt.pause(2)
         plt.close()
-
+    
     # plot cocoa bean batch mean dataset
 
     plt.figure(figsize=(6, 5))
@@ -613,3 +616,45 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
     plt.pause(2)
     plt.close()
 
+    # compute PCA with X_mean using sklearn
+
+    full_cocoa_bean_batch_mean_dataset = np.concatenate(cocoa_bean_batch_mean_dataset, axis=0)
+    full_label_batch_mean_dataset = np.concatenate(label_batch_mean_dataset, axis=0)
+
+    from sklearn.preprocessing import StandardScaler
+
+    scaler = StandardScaler()
+    full_cocoa_bean_batch_mean_dataset = scaler.fit_transform(full_cocoa_bean_batch_mean_dataset)
+
+    if subset_name == 'train':
+        pca = PCA(n_components=2)
+        pca.fit(full_cocoa_bean_batch_mean_dataset)
+        pcas['train_mean'] = pca
+
+        # Save the model
+        joblib.dump(pca, os.path.join(output_dir, f'pca_mean_nir_{pca_name}.pkl'))
+    else:
+        try:
+            pca = pcas['train']
+        except:
+            pca = joblib.load(os.path.join(output_dir, f'pca_mean_nir_{pca_name}.pkl'))
+
+    X_pca = pca.transform(full_cocoa_bean_batch_mean_dataset)
+
+    if debug_pca:
+        plt.figure(figsize=(6, 5))
+        for i in range(len(cocoa_bean_dataset)):
+            X_class = X_pca[full_label_batch_mean_dataset.squeeze() == i]
+            plt.scatter(X_class[:, 0], X_class[:, 1], color=colors[i], alpha=0.5, marker=markers[i],
+                        label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
+
+        plt.title(f'Cocoa dataset PCA')
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        plt.pause(2)
+        plt.close()
+        plt.show()
+        plt.show()
+        plt.show()

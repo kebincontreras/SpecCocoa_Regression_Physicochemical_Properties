@@ -5,46 +5,71 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import pandas as pd
+
 from scipy.io import loadmat
+from scipy.ndimage import median_filter
+from scipy.signal import savgol_filter, medfilt
 
 from sklearn.decomposition import PCA
+from datetime import datetime
 
-# Configurar matplotlib para modo no interactivo
+from sklearn.linear_model import LinearRegression
+
+# Configurar matplotlib para cerrar figuras automáticamente
 plt.ion()
 plt.rcParams['figure.max_open_warning'] = 0
-
 # functions
 
 def compute_sam(a, b):
-    assert a.ndim == 2, ("a must have two dimensions, "
-                         "if you only have one, please add an new dimension in the first place")
-    assert b.ndim == 2, ("b must have two dimensions, "
-                         "if you only have one, please add an new dimension in the first place")
+    assert a.ndim == 2, "a must have two dimensions, if you only have one, please add an new dimension in the first place"
+    assert b.ndim == 2, "b must have two dimensions, if you only have one, please add an new dimension in the first place"
 
     a_norm = np.linalg.norm(a, axis=-1, keepdims=True)
     b_norm = np.linalg.norm(b, axis=-1, keepdims=True)
     return np.arccos(np.clip(np.matmul(a, b.T) / np.matmul(a_norm, b_norm.T), a_min=-1.0, a_max=1.0))
 
 
+def compute_msc(spectra):
+    B, L = spectra.shape  # Número de firmas y bandas espectrales
+    mean_spectrum = np.mean(spectra, axis=0)  # Espectro de referencia promedio
+
+    spectra_msc = np.zeros_like(spectra)
+
+    for i in range(B):
+        # Ajuste de regresión lineal: X_i = a * X_ref + b
+        X_i = spectra[i, :].reshape(-1, 1)  # Convertimos a columna
+        X_ref = mean_spectrum.reshape(-1, 1)
+
+        model = LinearRegression()
+        model.fit(X_ref, X_i)
+
+        a = model.coef_[0, 0]  # Pendiente
+        b = model.intercept_[0]  # Intersección
+
+        # Aplicar la corrección MSC
+        spectra_msc[i, :] = (spectra[i, :] - b) / a
+
+    return spectra_msc
+
+
 # =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 # Dataset parameters
 # =#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#=#
 
-
 base_dir = "data/raw_dataset/Spectral_signatures_of_cocoa_beans"
 output_dir = "data"
 os.makedirs(output_dir, exist_ok=True)
-wavelenghts_path = '22_11_2024/Optical_lab_spectral/VIS'
 
 # set variables
 
-efficiency_range = [500, 850]  # nanometers (this is the spectral range of the data)
-conveyor_belt_samples = 200  # this is the number of converyor belt spectral signature samples for sam metric
+efficiency_range = [1100, 2000]  # nanometers (this is the spectral range of the data)
+entrega1_white_scaling = 1.0  # this is the number of converyor belt spectral signature samples for sam metric
+conveyor_belt_samples = 500  # for sam metric
 angle_error = 0.25  # angle error between conveyor belt and cocoa signatures
-max_num_samples = 1000  # selected samples from lot with higher sam
+max_num_samples = 500  # selected samples from lot with higher sam
 
 cocoa_batch_size = 50  # guillotine methodology (number of cocoa bean samples)
-cocoa_batch_samples = 1000  # number of batch samples (number of repetitions of cocoa_batch_size)
+cocoa_batch_samples = 2000  # number of batch samples (number of repetitions of cocoa_batch_size)
 
 plot_num_samples = 500  # number of samples to plot
 debug = False  # debug mode
@@ -56,19 +81,12 @@ debug_pca = True  # debug pca mode
 
 # set variables for cocoa dataset
 
-entrega_numbers = [4, 4, 1, 1, 3, 4, 4, 2, 1, 2, 1, 2, 3, 1, 2, 3, 3]
-ferm_levels = [30, 45, 60, 66, 66, 70, 70, 73, 84, 85, 92, 94, 94, 96, 96, 96, 100]
-colors = [
-    'red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray',
-    '#FF6347', '#4682B4', '#32CD32', '#FFD700', '#8A2BE2', '#5F9EA0',
-    '#D2691E', '#DC143C', '#00CED1'
-]
+entrega_numbers = ['Huila', 'Putumayo', 'Peru1', 'Peru2', 'Peru3']
+ferm_levels = [60, 96, 100, 100, 100]
+colors = ['red', 'blue', 'green', 'orange', 'purple']
 
 # Lista de marcadores únicos
-markers = [
-    'o', 's', 'D', 'P', 'X', '*', 'v', '^',
-    '<', '>', 'h', 'H', '+', 'x', '|', '_', 'd'
-]
+markers = ['o', 's', 'D', 'P', 'X']
 
 pcas = {}
 mean_pcas = {}
@@ -76,186 +94,40 @@ mean_pcas = {}
 # set path to cocoa dataset
 
 full_cocoa_paths = {
-    'train': {0: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                  "L": "L1F30H096E221124C181224VISTRAIFULL.mat",
-                  "B": "B1F30H096E221124C181224VISTRAIFULL.mat",
-                  "N": "N1F30H096E221124C181224VISTRAIFULL.mat",
-                  "E": "Entrega 4"},
-              1: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                  "L": "L2F45H144E221124C181224VISTRAIFULL.mat",
-                  "B": "B2F45H144E221124C181224VISTRAIFULL.mat",
-                  "N": "N2F45H144E221124C181224VISTRAIFULL.mat",
-                  "E": "Entrega 4"},
-              2: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L1F60H096R290324C070524VISTRAIFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-              3: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L2F66H144R310324C070524VISTRAIFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-              4: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                  "L": "L1F66H096E221024C091224VISTRAIFULL.mat",
-                  "B": "B1F66H096E221024C091224VISTRAIFULL.mat",
-                  "N": "N1F66H096E221024C091224VISTRAIFULL.mat",
-                  "E": "Entrega 3"},
-              5: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                  "L": "L3F70H192E221124C181224VISTRAIFULL.mat",
-                  "B": "B3F70H192E221124C181224VISTRAIFULL.mat",
-                  "N": "N3F70H192E221124C181224VISTRAIFULL.mat",
-                  "E": "Entrega 4"},
-              6: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                  "L": "L4F70H264E221124C181224VISTRAIFULL.mat",
-                  "B": "B4F70H264E221124C181224VISTRAIFULL.mat",
-                  "N": "N4F70H264E221124C181224VISTRAIFULL.mat",
-                  "E": "Entrega 4"},
-              7: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                  "L": "L2F73H144E270624C240724VISTRAIFULL.mat",
-                  "B": "B2F73H144E270624C240724VISTRAIFULL.mat",
-                  "N": "N2F73H144E270624C240724VISTRAIFULL.mat",
-                  "E": "Entrega 2"},
-              8: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L3F84H192R020424C090524VISTRAIFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-              9: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                  "L": "L1F85H110E270624C240724VISTRAIFULL.mat",
-                  "B": "B1F85H110E270624C240724VISTRAIFULL.mat",
-                  "N": "N1F85H110E270624C240724VISTRAIFULL.mat",
-                  "E": "Entrega 2"},
-              10: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                   "L": "L4F92H264R130424C090524VISTRAIFULL.mat",
-                   "B": "blanco.mat",
-                   "N": "negro.mat",
-                   "E": "Entrega 1"},
-              11: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                   "L": "L3F94H216E270624C240724VISTRAIFULL.mat",
-                   "B": "B3F94H216E270624C240724VISTRAIFULL.mat",
-                   "N": "N3F94H216E270624C240724VISTRAIFULL.mat",
-                   "E": "Entrega 2"},
-              12: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                   "L": "L2F94H144E221024C091224VISTRAIFULL.mat",
-                   "B": "B2F94H144E221024C091224VISTRAIFULL.mat",
-                   "N": "N2F94H144E221024C091224VISTRAIFULL.mat",
-                   "E": "Entrega 3"},
-              13: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                   "L": "L5F96HXXXRDDMMAAC090524VISTRAIFULL.mat",
-                   "B": "blanco.mat",
-                   "N": "negro.mat",
-                   "E": "Entrega 1"},
-              14: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                   "L": "L4F96H252E270624C240724VISTRAIFULL.mat",
-                   "B": "B4F96H252E270624C240724VISTRAIFULL.mat",
-                   "N": "N4F96H252E270624C240724VISTRAIFULL.mat",
-                   "E": "Entrega 2"},
-              15: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                   "L": "L3F96H192E221024C091224VISTRAIFULL.mat",
-                   "B": "B3F96H192E221024C091224VISTRAIFULL.mat",
-                   "N": "N3F96H192E221024C091224VISTRAIFULL.mat",
-                   "E": "Entrega 3"},
-              16: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                   "L": "L4F100H264E221024C091224VISTRAIFULL.mat",
-                   "B": "B4F100H264E221024C091224VISTRAIFULL.mat",
-                   "N": "N4F100H264E221024C091224VISTRAIFULL.mat",
-                   "E": "Entrega 3"},
-              },
-    'test': {0: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                 "L": "L1F30H096E221124C181224VISTESTFULL.mat",
-                 "B": "B1F30H096E221124C181224VISTESTFULL.mat",
-                 "N": "N1F30H096E221124C181224VISTESTFULL.mat",
-                 "E": "Entrega 4"},
-             1: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                 "L": "L2F45H144E221124C181224VISTESTFULL.mat",
-                 "B": "B2F45H144E221124C181224VISTESTFULL.mat",
-                 "N": "N2F45H144E221124C181224VISTESTFULL.mat",
-                 "E": "Entrega 4"},
-             2: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                 "L": "L1F60H096R290324C070524VISTESTFULL.mat",
-                 "B": "blanco.mat",
-                 "N": "negro.mat",
-                 "E": "Entrega 1"},
-             3: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                 "L": "L2F66H144R310324C070524VISTESTFULL.mat",
-                 "B": "blanco.mat",
-                 "N": "negro.mat",
-                 "E": "Entrega 1"},
-             4: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                 "L": "L1F66H096E221024C091224VISTESTFULL.mat",
-                 "B": "B1F66H096E221024C091224VISTESTFULL.mat",
-                 "N": "N1F66H096E221024C091224VISTESTFULL.mat",
-                 "E": "Entrega 3"},
-             5: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                 "L": "L3F70H192E221124C181224VISTESTFULL.mat",
-                 "B": "B3F70H192E221124C181224VISTESTFULL.mat",
-                 "N": "N3F70H192E221124C181224VISTESTFULL.mat",
-                 "E": "Entrega 4"},
-             6: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                 "L": "L4F70H264E221124C181224VISTESTFULL.mat",
-                 "B": "B4F70H264E221124C181224VISTESTFULL.mat",
-                 "N": "N4F70H264E221124C181224VISTESTFULL.mat",
-                 "E": "Entrega 4"},
-             7: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                 "L": "L2F73H144E270624C250724VISTESTFULL.mat",
-                 "B": "B2F73H144E270624C250724VISTESTFULL.mat",
-                 "N": "N2F73H144E270624C250724VISTESTFULL.mat",
-                 "E": "Entrega 2"},
-             8: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                 "L": "L3F84H192R020424C090524VISTESTFULL.mat",
-                 "B": "blanco.mat",
-                 "N": "negro.mat",
-                 "E": "Entrega 1"},
-             9: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                 "L": "L1F85H110E270624C250724VISTESTFULL.mat",
-                 "B": "B1F85H110E270624C250724VISTESTFULL.mat",
-                 "N": "N1F85H110E270624C250724VISTESTFULL.mat",
-                 "E": "Entrega 2"},
-             10: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L4F92H264R130424C090524VISTESTFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-             11: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                  "L": "L3F94H216E270624C250724VISTESTFULL.mat",
-                  "B": "B3F94H216E270624C250724VISTESTFULL.mat",
-                  "N": "N3F94H216E270624C250724VISTESTFULL.mat",
-                  "E": "Entrega 2"},
-             12: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                  "L": "L2F94H144E221024C091224VISTESTFULL.mat",
-                  "B": "B2F94H144E221024C091224VISTESTFULL.mat",
-                  "N": "N2F94H144E221024C091224VISTESTFULL.mat",
-                  "E": "Entrega 3"},
-             13: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L5F96HXXXRDDMMAAC090524VISTESTFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-             14: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                  "L": "L4F96H252E270624C250724VISTESTFULL.mat",
-                  "B": "B4F96H252E270624C250724VISTESTFULL.mat",
-                  "N": "N4F96H252E270624C250724VISTESTFULL.mat",
-                  "E": "Entrega 2"},
-             15: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                  "L": "L3F96H192E221024C091224VISTESTFULL.mat",
-                  "B": "B3F96H192E221024C091224VISTESTFULL.mat",
-                  "N": "N3F96H192E221024C091224VISTESTFULL.mat",
-                  "E": "Entrega 3"},
-             16: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                  "L": "L4F100H264E221024C091224VISTESTFULL.mat",
-                  "B": "B4F100H264E221024C091224VISTESTFULL.mat",
-                  "N": "N4F100H264E221024C091224VISTESTFULL.mat",
-                  "E": "Entrega 3"},
+    'test': {0: {"P": "test/Optical_lab_spectral/NIR",
+                 "L": "LHUILAFZZHZZZE010425C280525NIRZZZFULL.mat",
+                 "B": "BHUILAFZZHZZZE010425C280525NIRZZZFULL.mat",
+                 "N": "NHUILAFZZHZZZE010425C280525NIRZZZFULL.mat",
+                 "E": "Huila"},
+             1: {"P": "test/Optical_lab_spectral/NIR",
+                 "L": "LPUTUMAYOFZZHZZZE010425C270525NIRZZZZFULL.mat",
+                 "B": "BPUTUMAYOFZZHZZZE010425C270525NIRZZZZFULL.mat",
+                 "N": "NPUTUMAYOFZZHZZZE010425C270525NIRZZZZFULL.mat",
+                 "E": "Putumayo"},
+             2: {"P": "test/Optical_lab_spectral/NIR",
+                 "L": "LPERU1FZHZEZC070525NIRZFULL.mat",
+                 "B": "BPERU1FZHZEZC070525NIRZFULL.mat",
+                 "N": "NPERU1FZHZEZC070525NIRZFULL.mat",
+                 "E": "Peru1"},
+             3: {"P": "test/Optical_lab_spectral/NIR",
+                 "L": "LPERU2FZHZEZC070525NIRZFULL.mat",
+                 "B": "BPERU2FZHZEZC070525NIRZFULL.mat",
+                 "N": "NPERU2FZHZEZC070525NIRZFULL.mat",
+                 "E": "Peru2"},
+             4: {"P": "test/Optical_lab_spectral/NIR",
+                 "L": "LPERU3FZHZEZC070525NIRZFULL.mat",
+                 "B": "BPERU3FZHZEZC070525NIRZFULL.mat",
+                 "N": "NPERU3FZHZEZC070525NIRZFULL.mat",
+                 "E": "Peru3"},
              },
 }
 
 # load wavelengths
 
+wavelenghts_path = '22_11_2024/Optical_lab_spectral/NIR'
 wavelengths = next(
-    v for k, v in loadmat(os.path.join(base_dir, wavelenghts_path, 'wavelengths_VIS.mat')).items() if
+    v for k, v in loadmat(os.path.join(base_dir, wavelenghts_path, 'wavelengths_NIR.mat')).items() if
     not k.startswith('__')).squeeze()
-
 # set threshold between 400 and 900 nm
 
 efficiency_threshold = (efficiency_range[0] <= wavelengths) & (wavelengths <= efficiency_range[1])
@@ -285,7 +157,7 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
     label_dataset = []
     cocoa_bean_batch_mean_dataset = []
     label_batch_mean_dataset = []
-    with h5py.File(os.path.join(output_dir, f'{subset_name}_vis_cocoa_dataset.h5'), 'w') as d:
+    with h5py.File(os.path.join(output_dir, f'{subset_name}_nir_cocoa_dataset.h5'), 'w') as d:
         dataset = d.create_dataset('spec', shape=(0, len(wavelengths)), maxshape=(None, len(wavelengths)),
                                    chunks=(256, len(wavelengths)), dtype=np.float32)
         fermset = d.create_dataset('fermentation_level', (0, 1), maxshape=(None, 1), chunks=(256, 1), dtype=np.uint8)
@@ -301,7 +173,6 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
             dataset.resize(new_shape)
             dataset[current_shape[0]:] = new_data
 
-
         for label, lot_filename in lot_filenames.items():
             print(f"Processing {lot_filename['E']} - {lot_filename['L']}")
             cocoa_path = os.path.join(base_dir, lot_filename['P'])
@@ -311,20 +182,29 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
             black = next(
                 v for k, v in loadmat(os.path.join(cocoa_path, lot_filename['N'])).items() if not k.startswith('__'))
             lot = next(
-                v for k, v in loadmat(os.path.join(cocoa_path, lot_filename['L'])).items() if not k.startswith('__'))[
-                  1:]
+                v for k, v in loadmat(os.path.join(cocoa_path, lot_filename['L'])).items() if not k.startswith('__'))[1:]
 
             # apply efficiency threshold
 
-            white = white[:, efficiency_threshold.squeeze()]
+            white = white[:, efficiency_threshold]
             black = black[:, efficiency_threshold]
             lot = lot[:, efficiency_threshold]
-            lot = np.delete(lot, 8719, axis=0) if lot_filename == 'L2F66H144R310324C070524VISTRAIFULL.mat' else lot
+
+            if lot_filename['E'] in ['Entrega 1', 'Entrega 2']:
+                lot = lot + black.mean(axis=0)[None, ...]
+
+            if lot_filename['E'] in ['Entrega 1']:
+                white_max = white.max(axis=1)
+                white_max_index = white_max.argsort()[-10:]
+                white = white[white_max_index]
 
             # process white and black
 
             white = white.mean(axis=0)[None, ...]
             black = black.mean(axis=0)[None, ...]
+
+            # lot = (lot - black) / (white - black)
+            # lot = lot / lot.max(axis=-1, keepdims=True)
 
             if debug:
                 plt.figure(figsize=(8, 8))
@@ -349,7 +229,6 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
                 plt.title('Lot')
                 plt.xlabel('Wavelength [nm]')
                 plt.ylabel('Intensity')
-                # plt.ylim([-100, 1000])
                 plt.grid()
 
                 plt.tight_layout()
@@ -402,8 +281,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
             # get cocoa lot with reflectance
 
             selected_cocoa_reflectance = (selected_cocoa - black) / (white - black)
-            selected_cocoa_reflectance = selected_cocoa_reflectance / selected_cocoa_reflectance.max(axis=-1,
-                                                                                                     keepdims=True)
+            selected_cocoa_reflectance = selected_cocoa_reflectance / selected_cocoa_reflectance.max(axis=-1, keepdims=True)
+            # selected_cocoa_reflectance = selected_cocoa
 
             if debug:
                 plt.figure(figsize=(8, 8))
@@ -437,16 +316,61 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
                 plt.pause(2)
                 plt.close()
 
+            # filtering
+
+            # selected_cocoa_reflectance_median = savgol_filter(selected_cocoa_reflectance.copy(), 15, 2)
+            selected_cocoa_reflectance_median = median_filter(selected_cocoa_reflectance.copy(), 10)
+            # selected_cocoa_reflectance_median_msc = compute_msc(selected_cocoa_reflectance_median.copy())
+
+            if debug:
+                plt.figure(figsize=(8, 8))
+                plt.suptitle(lot_filename['E'] + ' - ' + lot_filename['L'])
+
+                plt.subplot(2, 1, 1)
+                plt.plot(wavelengths,
+                         selected_cocoa_reflectance[::selected_cocoa_reflectance.shape[0] // plot_num_samples + 1].T,
+                         alpha=0.5)
+                plt.title('Selected Cocoa Reflectance')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Reflectance')
+                plt.grid()
+
+                plt.subplot(2, 1, 2)
+                plt.plot(wavelengths,
+                         selected_cocoa_reflectance_median[
+                         ::selected_cocoa_reflectance_median.shape[0] // plot_num_samples + 1].T,
+                         alpha=0.5)
+                plt.title('Selected Cocoa Reflectance Median')
+                plt.xlabel('Wavelength [nm]')
+                plt.ylabel('Reflectance')
+                plt.grid()
+
+                # plt.subplot(3, 1, 3)
+                # plt.plot(wavelengths,
+                #          selected_cocoa_reflectance_median_msc[
+                #          ::selected_cocoa_reflectance_median_msc.shape[0] // plot_num_samples + 1].T,
+                #          alpha=0.5)
+                # plt.title('Selected Cocoa Reflectance Median MSC')
+                # plt.xlabel('Wavelength [nm]')
+                # plt.ylabel('Reflectance')
+                # plt.grid()
+
+                plt.tight_layout()
+                plt.show()
+                plt.pause(2)
+                plt.close()
+
             # append to dataset
 
-            cocoa_bean_dataset.append(selected_cocoa_reflectance)
-            label_dataset.append(np.ones(selected_cocoa_reflectance.shape[0], dtype=int) * label)
+            cocoa_bean_dataset.append(selected_cocoa_reflectance_median)
+            label_dataset.append(np.ones(selected_cocoa_reflectance_median.shape[0], dtype=int) * label)
 
             # shuffle and batch mean
             cocoa_bean_batch_mean_aux = []
             for i in range(cocoa_batch_samples):
-                random_indices = np.random.choice(selected_cocoa_reflectance.shape[0], cocoa_batch_size, replace=False)
-                cocoa_bean_batch_mean_aux.append(selected_cocoa_reflectance[random_indices].mean(axis=0))
+                random_indices = np.random.choice(selected_cocoa_reflectance_median.shape[0], cocoa_batch_size,
+                                                  replace=False)
+                cocoa_bean_batch_mean_aux.append(selected_cocoa_reflectance_median[random_indices].mean(axis=0))
 
             cocoa_bean_batch_mean_aux = np.stack(cocoa_bean_batch_mean_aux, axis=0)
             cocoa_bean_batch_mean_dataset.append(cocoa_bean_batch_mean_aux)
@@ -494,20 +418,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
     scaler = StandardScaler()
     full_cocoa_bean_dataset = scaler.fit_transform(full_cocoa_bean_dataset)
-
-    if subset_name == 'train':
-        pca = PCA(n_components=2)
-        pca.fit(full_cocoa_bean_dataset)
-        pcas['train'] = pca
-
-        # Save the model
-        joblib.dump(pca, os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
-    else:
-        try:
-            pca = pcas['train']
-        except:
-            pca = joblib.load(os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
-
+        
+    pca = joblib.load(os.path.join(output_dir, f'pca_nir_{pca_name}.pkl'))
     X_pca = pca.transform(full_cocoa_bean_dataset)
 
     if debug_pca:
@@ -516,6 +428,9 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
             X_class = X_pca[full_label_dataset.squeeze() == i]
             plt.scatter(X_class[:, 0], X_class[:, 1], color=colors[i], alpha=0.5, marker=markers[i],
                         label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
+
+        # plt.xlabel('Component 1: {:.2f}%'.format(explained_variance[0] * 100))
+        # plt.ylabel('Component 2: {:.2f}%'.format(explained_variance[1] * 100))
 
         plt.title(f'Cocoa dataset PCA')
         plt.grid()
@@ -555,20 +470,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
     scaler = StandardScaler()
     full_cocoa_bean_batch_mean_dataset = scaler.fit_transform(full_cocoa_bean_batch_mean_dataset)
-
-    if subset_name == 'train':
-        pca = PCA(n_components=2)
-        pca.fit(full_cocoa_bean_batch_mean_dataset)
-        pcas['train_mean'] = pca
-
-        # Save the model
-        joblib.dump(pca, os.path.join(output_dir, f'pca_mean_vis_{pca_name}.pkl'))
-    else:
-        try:
-            pca = pcas['train']
-        except:
-            pca = joblib.load(os.path.join(output_dir, f'pca_mean_vis_{pca_name}.pkl'))
-
+    
+    pca = joblib.load(os.path.join(output_dir, f'pca_mean_nir_{pca_name}.pkl'))
     X_pca = pca.transform(full_cocoa_bean_batch_mean_dataset)
 
     if debug_pca:

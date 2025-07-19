@@ -58,13 +58,21 @@ python data/create_dataset/download_cocoa_dataset.py
 ```
 This script downloads and extracts the raw dataset into `data/raw_dataset`.
 
-#### Step 2.2 – Generate Training and Testing Datasets
+#### Step 2.2 – Generate Training and Validation Datasets
 
 ```bash
 python data/create_dataset/create_NIR2025_dataset.py
 python data/create_dataset/create_VIS2025_dataset.py
 ```
-These scripts generate the training and testing datasets for the NIR and VIS spectrums.
+These scripts generate the training and validation datasets for the NIR and VIS spectrums.
+
+#### Step 2.2.1 – Generate Regional Testing Datasets
+
+```bash
+python data/create_dataset/create_NIR2025_test_dataset.py
+python data/create_dataset/create_VIS2025_test_dataset.py
+```
+These scripts generate the testing datasets for the NIR and VIS spectrums from Huila and Putumayo regions in Colombia, and Costo, Peru.
 
 #### Step 2.3 – Normalize the Datasets (Required)
 
