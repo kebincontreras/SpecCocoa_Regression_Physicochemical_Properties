@@ -34,7 +34,7 @@ def compute_sam(a, b):
 base_dir = "data/raw_dataset/Spectral_signatures_of_cocoa_beans"
 output_dir = "data"
 os.makedirs(output_dir, exist_ok=True)
-wavelenghts_path = '22_11_2024/Optical_lab_spectral/VIS'
+wavelenghts_path = 'test/Optical_lab_spectral/VIS'
 
 # set variables
 
@@ -56,19 +56,13 @@ debug_pca = True  # debug pca mode
 
 # set variables for cocoa dataset
 
-entrega_numbers = [4, 4, 1, 1, 3, 4, 4, 2, 1, 2, 1, 2, 3, 1, 2, 3, 3]
-ferm_levels = [30, 45, 60, 66, 66, 70, 70, 73, 84, 85, 92, 94, 94, 96, 96, 96, 100]
+entrega_numbers = ['Huila', 'Putumayo', 'Peru1', 'Peru2', 'Peru3']
+ferm_levels = [60, 96, 100, 100, 100]
 colors = [
-    'red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray',
-    '#FF6347', '#4682B4', '#32CD32', '#FFD700', '#8A2BE2', '#5F9EA0',
-    '#D2691E', '#DC143C', '#00CED1'
-]
+    'red', 'blue', 'green', 'orange', 'purple']
 
 # Lista de marcadores únicos
-markers = [
-    'o', 's', 'D', 'P', 'X', '*', 'v', '^',
-    '<', '>', 'h', 'H', '+', 'x', '|', '_', 'd'
-]
+markers = ['o', 's', 'D', 'P', 'X']
 
 pcas = {}
 mean_pcas = {}
@@ -76,177 +70,31 @@ mean_pcas = {}
 # set path to cocoa dataset
 
 full_cocoa_paths = {
-    'train': {0: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                  "L": "L1F30H096E221124C181224VISTRAIFULL.mat",
-                  "B": "B1F30H096E221124C181224VISTRAIFULL.mat",
-                  "N": "N1F30H096E221124C181224VISTRAIFULL.mat",
-                  "E": "Entrega 4"},
-              1: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                  "L": "L2F45H144E221124C181224VISTRAIFULL.mat",
-                  "B": "B2F45H144E221124C181224VISTRAIFULL.mat",
-                  "N": "N2F45H144E221124C181224VISTRAIFULL.mat",
-                  "E": "Entrega 4"},
-              2: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L1F60H096R290324C070524VISTRAIFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-              3: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L2F66H144R310324C070524VISTRAIFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-              4: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                  "L": "L1F66H096E221024C091224VISTRAIFULL.mat",
-                  "B": "B1F66H096E221024C091224VISTRAIFULL.mat",
-                  "N": "N1F66H096E221024C091224VISTRAIFULL.mat",
-                  "E": "Entrega 3"},
-              5: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                  "L": "L3F70H192E221124C181224VISTRAIFULL.mat",
-                  "B": "B3F70H192E221124C181224VISTRAIFULL.mat",
-                  "N": "N3F70H192E221124C181224VISTRAIFULL.mat",
-                  "E": "Entrega 4"},
-              6: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                  "L": "L4F70H264E221124C181224VISTRAIFULL.mat",
-                  "B": "B4F70H264E221124C181224VISTRAIFULL.mat",
-                  "N": "N4F70H264E221124C181224VISTRAIFULL.mat",
-                  "E": "Entrega 4"},
-              7: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                  "L": "L2F73H144E270624C240724VISTRAIFULL.mat",
-                  "B": "B2F73H144E270624C240724VISTRAIFULL.mat",
-                  "N": "N2F73H144E270624C240724VISTRAIFULL.mat",
-                  "E": "Entrega 2"},
-              8: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L3F84H192R020424C090524VISTRAIFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-              9: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                  "L": "L1F85H110E270624C240724VISTRAIFULL.mat",
-                  "B": "B1F85H110E270624C240724VISTRAIFULL.mat",
-                  "N": "N1F85H110E270624C240724VISTRAIFULL.mat",
-                  "E": "Entrega 2"},
-              10: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                   "L": "L4F92H264R130424C090524VISTRAIFULL.mat",
-                   "B": "blanco.mat",
-                   "N": "negro.mat",
-                   "E": "Entrega 1"},
-              11: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                   "L": "L3F94H216E270624C240724VISTRAIFULL.mat",
-                   "B": "B3F94H216E270624C240724VISTRAIFULL.mat",
-                   "N": "N3F94H216E270624C240724VISTRAIFULL.mat",
-                   "E": "Entrega 2"},
-              12: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                   "L": "L2F94H144E221024C091224VISTRAIFULL.mat",
-                   "B": "B2F94H144E221024C091224VISTRAIFULL.mat",
-                   "N": "N2F94H144E221024C091224VISTRAIFULL.mat",
-                   "E": "Entrega 3"},
-              13: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                   "L": "L5F96HXXXRDDMMAAC090524VISTRAIFULL.mat",
-                   "B": "blanco.mat",
-                   "N": "negro.mat",
-                   "E": "Entrega 1"},
-              14: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                   "L": "L4F96H252E270624C240724VISTRAIFULL.mat",
-                   "B": "B4F96H252E270624C240724VISTRAIFULL.mat",
-                   "N": "N4F96H252E270624C240724VISTRAIFULL.mat",
-                   "E": "Entrega 2"},
-              15: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                   "L": "L3F96H192E221024C091224VISTRAIFULL.mat",
-                   "B": "B3F96H192E221024C091224VISTRAIFULL.mat",
-                   "N": "N3F96H192E221024C091224VISTRAIFULL.mat",
-                   "E": "Entrega 3"},
-              16: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                   "L": "L4F100H264E221024C091224VISTRAIFULL.mat",
-                   "B": "B4F100H264E221024C091224VISTRAIFULL.mat",
-                   "N": "N4F100H264E221024C091224VISTRAIFULL.mat",
-                   "E": "Entrega 3"},
-              },
-    'test': {0: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                 "L": "L1F30H096E221124C181224VISTESTFULL.mat",
-                 "B": "B1F30H096E221124C181224VISTESTFULL.mat",
-                 "N": "N1F30H096E221124C181224VISTESTFULL.mat",
-                 "E": "Entrega 4"},
-             1: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                 "L": "L2F45H144E221124C181224VISTESTFULL.mat",
-                 "B": "B2F45H144E221124C181224VISTESTFULL.mat",
-                 "N": "N2F45H144E221124C181224VISTESTFULL.mat",
-                 "E": "Entrega 4"},
-             2: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                 "L": "L1F60H096R290324C070524VISTESTFULL.mat",
-                 "B": "blanco.mat",
-                 "N": "negro.mat",
-                 "E": "Entrega 1"},
-             3: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                 "L": "L2F66H144R310324C070524VISTESTFULL.mat",
-                 "B": "blanco.mat",
-                 "N": "negro.mat",
-                 "E": "Entrega 1"},
-             4: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                 "L": "L1F66H096E221024C091224VISTESTFULL.mat",
-                 "B": "B1F66H096E221024C091224VISTESTFULL.mat",
-                 "N": "N1F66H096E221024C091224VISTESTFULL.mat",
-                 "E": "Entrega 3"},
-             5: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                 "L": "L3F70H192E221124C181224VISTESTFULL.mat",
-                 "B": "B3F70H192E221124C181224VISTESTFULL.mat",
-                 "N": "N3F70H192E221124C181224VISTESTFULL.mat",
-                 "E": "Entrega 4"},
-             6: {"P": "22_11_2024/Optical_lab_spectral/VIS",
-                 "L": "L4F70H264E221124C181224VISTESTFULL.mat",
-                 "B": "B4F70H264E221124C181224VISTESTFULL.mat",
-                 "N": "N4F70H264E221124C181224VISTESTFULL.mat",
-                 "E": "Entrega 4"},
-             7: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                 "L": "L2F73H144E270624C250724VISTESTFULL.mat",
-                 "B": "B2F73H144E270624C250724VISTESTFULL.mat",
-                 "N": "N2F73H144E270624C250724VISTESTFULL.mat",
-                 "E": "Entrega 2"},
-             8: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                 "L": "L3F84H192R020424C090524VISTESTFULL.mat",
-                 "B": "blanco.mat",
-                 "N": "negro.mat",
-                 "E": "Entrega 1"},
-             9: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                 "L": "L1F85H110E270624C250724VISTESTFULL.mat",
-                 "B": "B1F85H110E270624C250724VISTESTFULL.mat",
-                 "N": "N1F85H110E270624C250724VISTESTFULL.mat",
-                 "E": "Entrega 2"},
-             10: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L4F92H264R130424C090524VISTESTFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-             11: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                  "L": "L3F94H216E270624C250724VISTESTFULL.mat",
-                  "B": "B3F94H216E270624C250724VISTESTFULL.mat",
-                  "N": "N3F94H216E270624C250724VISTESTFULL.mat",
-                  "E": "Entrega 2"},
-             12: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                  "L": "L2F94H144E221024C091224VISTESTFULL.mat",
-                  "B": "B2F94H144E221024C091224VISTESTFULL.mat",
-                  "N": "N2F94H144E221024C091224VISTESTFULL.mat",
-                  "E": "Entrega 3"},
-             13: {"P": "09_05_2024/Optical_lab_spectral/VIS",
-                  "L": "L5F96HXXXRDDMMAAC090524VISTESTFULL.mat",
-                  "B": "blanco.mat",
-                  "N": "negro.mat",
-                  "E": "Entrega 1"},
-             14: {"P": "02_07_2024/Optical_lab_spectral/VIS",
-                  "L": "L4F96H252E270624C250724VISTESTFULL.mat",
-                  "B": "B4F96H252E270624C250724VISTESTFULL.mat",
-                  "N": "N4F96H252E270624C250724VISTESTFULL.mat",
-                  "E": "Entrega 2"},
-             15: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                  "L": "L3F96H192E221024C091224VISTESTFULL.mat",
-                  "B": "B3F96H192E221024C091224VISTESTFULL.mat",
-                  "N": "N3F96H192E221024C091224VISTESTFULL.mat",
-                  "E": "Entrega 3"},
-             16: {"P": "22_10_2024/Optical_lab_spectral/VIS",
-                  "L": "L4F100H264E221024C091224VISTESTFULL.mat",
-                  "B": "B4F100H264E221024C091224VISTESTFULL.mat",
-                  "N": "N4F100H264E221024C091224VISTESTFULL.mat",
-                  "E": "Entrega 3"},
+    'test': {0: {"P": "test/Optical_lab_spectral/VIS",
+                 "L": "LHUILAFZZHZZZE010425C280525VISZZZFULL.mat",
+                 "B": "BHUILAFZZHZZZE010425C280525VISZZZFULL.mat",
+                 "N": "NHUILAFZZHZZZE010425C280525VISZZZFULL.mat",
+                 "E": "Huila"},
+             1: {"P": "test/Optical_lab_spectral/VIS",
+                 "L": "LLPUTUMAYOFZZHZZZE010425C270525VISZZZFULL.mat",
+                 "B": "BLPUTUMAYOFZZHZZZE010425C270525VISZZZFULL.mat",
+                 "N": "NLPUTUMAYOFZZHZZZE010425C270525VISZZZFULL.mat",
+                 "E": "Putumayo"},
+             2: {"P": "test/Optical_lab_spectral/VIS",
+                 "L": "LPERU1FZHZEZC050525VISZFULL.mat",
+                 "B": "BPERU1FZHZEZC050525VISZFULL.mat",
+                 "N": "NPERU1FZHZEZC050525VISZFULL.mat",
+                 "E": "Peru1"},
+             3: {"P": "test/Optical_lab_spectral/VIS",
+                 "L": "LPERU2FZHZEZC050525VISZFULL.mat",
+                 "B": "BPERU2FZHZEZC050525VISZFULL.mat",
+                 "N": "NPERU2FZHZEZC050525VISZFULL.mat",
+                 "E": "Peru2"},
+             4: {"P": "test/Optical_lab_spectral/VIS",
+                 "L": "LPERU3FZHZEZC070525VISZFULL.mat",
+                 "B": "BPERU3FZHZEZC070525VISZFULL.mat",
+                 "N": "NPERU3FZHZEZC070525VISZFULL.mat",
+                 "E": "Peru3"},
              },
 }
 
@@ -285,7 +133,7 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
     label_dataset = []
     cocoa_bean_batch_mean_dataset = []
     label_batch_mean_dataset = []
-    with h5py.File(os.path.join(output_dir, f'{subset_name}_vis_cocoa_dataset.h5'), 'w') as d:
+    with h5py.File(os.path.join(output_dir, f'{subset_name}_regions_vis_cocoa_dataset.h5'), 'w') as d:
         dataset = d.create_dataset('spec', shape=(0, len(wavelengths)), maxshape=(None, len(wavelengths)),
                                    chunks=(256, len(wavelengths)), dtype=np.float32)
         fermset = d.create_dataset('fermentation_level', (0, 1), maxshape=(None, 1), chunks=(256, 1), dtype=np.uint8)
@@ -354,8 +202,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
                 plt.tight_layout()
                 plt.show()
-                plt.pause(2)
-                plt.close()
+                # plt.pause(2)
+                # plt.close()
 
             # get conveyor belt signatures
 
@@ -396,8 +244,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
                 plt.tight_layout()
                 plt.show()
-                plt.pause(2)
-                plt.close()
+                # plt.pause(2)
+                # plt.close()
 
             # get cocoa lot with reflectance
 
@@ -434,8 +282,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
 
                 plt.tight_layout()
                 plt.show()
-                plt.pause(2)
-                plt.close()
+                # plt.pause(2)
+                # plt.close()
 
             # append to dataset
 
@@ -457,7 +305,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
             append_to_dataset(dataset, cocoa_bean_batch_mean_aux)
 
             ones_vector = np.ones((cocoa_bean_batch_mean_aux.shape[0], 1), dtype=int)
-            gt_label = pd_labels[pd_labels['Lot'].str.contains(lot_filename['L'][:12])]
+            search_key = lot_filename['L'].lstrip('L')  # Remove leading 'L' if already present
+            gt_label = pd_labels[pd_labels['Lot'].str.contains('L' + search_key[:11])]
             append_to_dataset(fermset, ones_vector * gt_label['Fermentation'].values[0])
             append_to_dataset(moistset, ones_vector * gt_label['Moisture'].values[0])
             append_to_dataset(cadmiumset, ones_vector * float(gt_label['Cadmium'].values[0].replace('<', '')))
@@ -482,8 +331,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         plt.grid()
         plt.tight_layout()
         plt.show()
-        plt.pause(2)
-        plt.close()
+        # plt.pause(2)
+        # plt.close()
 
     # compute PCA with X_mean using sklearn
 
@@ -503,7 +352,10 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         # Save the model
         joblib.dump(pca, os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
     else:
-        pca = pcas['train']
+        try:
+            pca = pcas['train']
+        except:
+            pca = joblib.load(os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
 
     X_pca = pca.transform(full_cocoa_bean_dataset)
 
@@ -519,8 +371,8 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
         plt.legend()
         plt.tight_layout()
         plt.show()
-        plt.pause(2)
-        plt.close()
+        # plt.pause(2)
+        # plt.close()
 
     # plot cocoa bean batch mean dataset
 
@@ -540,45 +392,45 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
     plt.grid()
     plt.tight_layout()
     plt.show()
-    plt.pause(2)
-    plt.close()
+    # plt.pause(2)
+    # plt.close()
 
     # compute PCA with X_mean using sklearn
 
-    # full_cocoa_bean_batch_mean_dataset = np.concatenate(cocoa_bean_batch_mean_dataset, axis=0)
-    # full_label_batch_mean_dataset = np.concatenate(label_batch_mean_dataset, axis=0)
+    full_cocoa_bean_batch_mean_dataset = np.concatenate(cocoa_bean_batch_mean_dataset, axis=0)
+    full_label_batch_mean_dataset = np.concatenate(label_batch_mean_dataset, axis=0)
 
-    # from sklearn.preprocessing import StandardScaler
+    from sklearn.preprocessing import StandardScaler
 
-    # scaler = StandardScaler()
-    # full_cocoa_bean_batch_mean_dataset = scaler.fit_transform(full_cocoa_bean_batch_mean_dataset)
+    scaler = StandardScaler()
+    full_cocoa_bean_batch_mean_dataset = scaler.fit_transform(full_cocoa_bean_batch_mean_dataset)
 
-    # if subset_name == 'train':
-    #     pca = PCA(n_components=2)
-    #     pca.fit(full_cocoa_bean_batch_mean_dataset)
-    #     pcas['train_mean'] = pca
+    if subset_name == 'train':
+        pca = PCA(n_components=2)
+        pca.fit(full_cocoa_bean_batch_mean_dataset)
+        pcas['train_mean'] = pca
 
-    #     # Save the model
-    #     #joblib.dump(pca, os.path.join(output_dir, f'pca_mean_vis_{pca_name}.pkl'))
-    # else:
-    #     pca = pcas['train_mean']
+        # Save the model
+        joblib.dump(pca, os.path.join(output_dir, f'pca_mean_vis_{pca_name}.pkl'))
+    else:
+        try:
+            pca = pcas['train']
+        except:
+            pca = joblib.load(os.path.join(output_dir, f'pca_vis_{pca_name}.pkl'))
 
-    # X_pca = pca.transform(full_cocoa_bean_batch_mean_dataset)
+    X_pca = pca.transform(full_cocoa_bean_batch_mean_dataset)
 
-    # if debug_pca:
-    #     plt.figure(figsize=(6, 5))
-    #     for i in range(len(cocoa_bean_dataset)):
-    #         X_class = X_pca[full_label_batch_mean_dataset.squeeze() == i]
-    #         plt.scatter(X_class[:, 0], X_class[:, 1], color=colors[i], alpha=0.5, marker=markers[i],
-    #                     label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
+    if debug_pca:
+        plt.figure(figsize=(6, 5))
+        for i in range(len(cocoa_bean_dataset)):
+            X_class = X_pca[full_label_batch_mean_dataset.squeeze() == i]
+            plt.scatter(X_class[:, 0], X_class[:, 1], color=colors[i], alpha=0.5, marker=markers[i],
+                        label=f'E{entrega_numbers[i]}-F{ferm_levels[i]}')
 
-    #     plt.title(f'Cocoa dataset PCA')
-    #     plt.grid()
-    #     plt.legend()
-    #     plt.tight_layout()
-    #     plt.show()
-    #     plt.pause(2)
-    #     plt.close()
-    #     plt.show()
-    #     plt.show()
-    #     plt.show()
+        plt.title(f'Cocoa dataset PCA')
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        # plt.pause(2)
+        # plt.close()
