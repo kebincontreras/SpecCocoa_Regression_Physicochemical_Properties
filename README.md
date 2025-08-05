@@ -66,7 +66,15 @@ python data/create_dataset/create_VIS2025_dataset.py
 ```
 These scripts generate the training and validation datasets for the NIR and VIS spectrums.
 
-#### Step 2.2.1 – Generate Regional Testing Datasets
+#### Step 2.2.1 – Generate Validation Datasets
+
+```bash
+python data/create_dataset/create_NIR2025_val_dataset.py
+python data/create_dataset/create_VIS2025_val_dataset.py
+```
+These scripts generate the validation datasets for the NIR and VIS spectrums from Carmen del Chucurí.
+
+#### Step 2.2.2 – Generate Regional Testing Datasets
 
 ```bash
 python data/create_dataset/create_NIR2025_test_dataset.py

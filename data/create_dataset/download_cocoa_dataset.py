@@ -68,8 +68,21 @@ def main():
 
     os.makedirs(RAR_DIR, exist_ok=True)
 
-    print(f"Downloading from: {RAR_URL}")
-    download_file(RAR_URL, RAR_FILENAME)
+    # Check if dataset is already extracted
+    extracted_folder = os.path.join(RAR_DIR, SUBFOLDER_TO_FLATTEN)
+    if os.path.exists(extracted_folder):
+        print(f"Dataset already extracted at: {extracted_folder}")
+        print("Skipping download and extraction.")
+        print("Dataset is ready to use.")
+        return
+
+    # Check if RAR file already exists
+    if os.path.exists(RAR_FILENAME):
+        print(f"RAR file already exists: {RAR_FILENAME}")
+        print("Skipping download.")
+    else:
+        print(f"Downloading from: {RAR_URL}")
+        download_file(RAR_URL, RAR_FILENAME)
 
     print(f"Extracting {RAR_FILENAME}...")
     extract_rar(RAR_FILENAME, EXTRACT_DIR)
