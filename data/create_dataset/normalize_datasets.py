@@ -51,7 +51,7 @@ def normalize_labels(input_file, output_file):
         print(f"Error in {input_file.name}: {str(e)}")
 
 def normalize_all_datasets():
-    patterns = ["train_*_cocoa_dataset.h5", "test_*_cocoa_dataset.h5"]
+    patterns = ["train_*_cocoa_dataset.h5", "test_*_cocoa_dataset.h5", "test_val_*_cocoa_dataset.h5"]
 
     print("Starting cocoa dataset normalization")
     print(f"Folder: {DATA_DIR.resolve()}")

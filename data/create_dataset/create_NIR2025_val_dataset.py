@@ -173,7 +173,7 @@ for subset_name, lot_filenames in full_cocoa_paths.items():
     label_dataset = []
     cocoa_bean_batch_mean_dataset = []
     label_batch_mean_dataset = []
-    with h5py.File(os.path.join(output_dir, f'{subset_name}_nir_cocoa_dataset.h5'), 'w') as d:
+    with h5py.File(os.path.join(output_dir, f'test_val_nir_cocoa_dataset.h5'), 'w') as d:
         dataset = d.create_dataset('spec', shape=(0, len(wavelengths)), maxshape=(None, len(wavelengths)),
                                    chunks=(256, len(wavelengths)), dtype=np.float32)
         fermset = d.create_dataset('fermentation_level', (0, 1), maxshape=(None, 1), chunks=(256, 1), dtype=np.uint8)

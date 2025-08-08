@@ -4,11 +4,11 @@ torchvision>=0.15.0
 torchaudio>=2.0.0
 
 # Core ML/DL packages
-lightning-utilities>=0.10.0
-numpy>=1.21.0,<2.0.0
+lightning-utilities>=0.11.0
+numpy>=1.24.0
 pandas>=1.5.0
-scipy>=1.9.0
-scikit-learn>=1.1.0
+scipy>=1.10.0
+scikit-learn>=1.3.0
 
 # Visualization and data handling
 matplotlib>=3.5.0
@@ -20,19 +20,18 @@ openpyxl>=3.0.0
 tabulate>=0.8.9
 
 # ML/DL utilities
-wandb>=0.15.0
-einops>=0.6.0
-torchmetrics>=0.10.0
+wandb>=0.16.0
+einops>=0.7.0
+torchmetrics>=1.0.0
 
 # File handling and utilities
-requests>=2.25.0
-joblib>=1.1.0
+requests>=2.28.0
+joblib>=1.2.0
 rarfile>=4.0
-patoolib>=0.0.1
-huggingface_hub>=0.15.0
-pillow>=8.0.0
-pydantic>=1.8.0
-PyYAML>=5.4.0
+huggingface_hub>=0.16.0
+pillow>=9.0.0
+pydantic>=2.0.0
+PyYAML>=6.0.0
 gitpython>=3.1.0
 
 # System utilities
