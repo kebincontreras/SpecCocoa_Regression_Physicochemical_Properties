@@ -1,3 +1,7 @@
+# System Requirements (Linux/Ubuntu):
+# Before running setup.sh on Linux, install: sudo apt-get install unrar
+# or alternatively: sudo apt-get install p7zip-full
+
 # PyTorch (Windows will use these, Linux script installs separately)
 torch>=2.0.0
 torchvision>=0.15.0
