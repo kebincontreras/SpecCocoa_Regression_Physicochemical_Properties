@@ -36,6 +36,20 @@ These scripts automatically execute all steps: create environment, install depen
 
 Follow these steps to get started with this repository:
 
+#### Prerequisites
+
+**For Linux/Ubuntu:**
+```bash
+sudo apt-get install unrar
+# or alternatively
+sudo apt-get install p7zip-full
+```
+
+**For Windows:**
+The extraction tool is included in the project (`methods/utils/unrar.exe`).
+
+#### 1. Set up Python Environment
+
 ```bash
 conda create -n Regression_cocoa python=3.10 -y
 conda run -n Regression_cocoa pip install -r requirements.txt

@@ -2,6 +2,7 @@
 import os
 import requests
 import shutil
+import subprocess
 import rarfile
 from tqdm import tqdm
 
@@ -27,15 +28,46 @@ def download_file(url, dest):
         bar.close()
 
 def extract_rar(rar_path, extract_to):
-    # Configure unrar.exe from methods/utils/
+    import platform
+    import subprocess
+    
+    # Configure unrar based on OS
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    unrar_path = os.path.join(project_root, "methods", "utils", "unrar.exe")
     
-    if not os.path.exists(unrar_path):
-        raise FileNotFoundError(f"unrar.exe not found at: {unrar_path}")
-    
-    rarfile.UNRAR_TOOL = unrar_path
-    print(f"Using unrar: {unrar_path}")
+    if platform.system() == "Windows":
+        # Use unrar.exe from methods/utils/ on Windows
+        unrar_path = os.path.join(project_root, "methods", "utils", "unrar.exe")
+        if not os.path.exists(unrar_path):
+            raise FileNotFoundError(f"unrar.exe not found at: {unrar_path}")
+        rarfile.UNRAR_TOOL = unrar_path
+        print(f"Using unrar: {unrar_path}")
+    else:
+        # Use system unrar on Linux/Mac
+        unrar_cmd = shutil.which("unrar")
+        if unrar_cmd:
+            rarfile.UNRAR_TOOL = unrar_cmd
+            print(f"Using system unrar: {unrar_cmd}")
+        else:
+            # Try alternative extraction methods on Linux
+            print("unrar not found, trying alternative extraction...")
+            if shutil.which("7z"):
+                print("Using 7z for extraction...")
+                result = subprocess.run(
+                    ["7z", "x", rar_path, f"-o{extract_to}", "-y"],
+                    capture_output=True, text=True
+                )
+                if result.returncode == 0:
+                    print(f"Extracted to: {extract_to}")
+                    return True
+                else:
+                    raise Exception(f"7z extraction failed: {result.stderr}")
+            else:
+                raise FileNotFoundError(
+                    "No extraction tool found. Please install unrar or p7zip-full:\n"
+                    "  sudo apt-get install unrar\n"
+                    "  or\n"
+                    "  sudo apt-get install p7zip-full"
+                )
     
     if not rarfile.is_rarfile(rar_path):
         raise ValueError(f"Not a valid RAR file: {rar_path}")

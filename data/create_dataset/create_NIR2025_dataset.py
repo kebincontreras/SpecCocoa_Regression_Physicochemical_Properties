@@ -280,7 +280,7 @@ wavelengths = wavelengths[efficiency_threshold]
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
-pd_labels = pd.read_excel(os.path.join(base_dir, 'Labels.xlsx'))
+pd_labels = pd.read_excel('data/Labels.xlsx')
 
 # pca name
 
